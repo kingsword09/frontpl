@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@v1
+    with:
+      packageManager: pnpm
