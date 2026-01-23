@@ -1,9 +1,13 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ["src/cli.ts"],
-  outDir: "dist",
-  platform: "node",
-  format: "esm",
+  entry: {
+    cli: "src/cli.ts",
+    index: "src/index.ts",
+  },
+  format: ["esm"],
+  target: "node22",
   clean: true,
+  dts: true,
+  shims: true,
 });

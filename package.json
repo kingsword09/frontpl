@@ -1,7 +1,24 @@
 {
   "name": "frontpl",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Interactive CLI to scaffold standardized frontend project templates.",
+  "keywords": [
+    "cli",
+    "frontend",
+    "generator",
+    "scaffold",
+    "template"
+  ],
+  "homepage": "https://github.com/kingsword09/frontpl#readme",
+  "bugs": {
+    "url": "https://github.com/kingsword09/frontpl/issues"
+  },
+  "license": "MIT",
+  "author": "Kingsword kingsword09 <kingsword09@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kingsword09/frontpl.git"
+  },
   "bin": {
     "frontpl": "./dist/cli.mjs"
   },
@@ -9,13 +26,20 @@
     "dist"
   ],
   "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
   "scripts": {
     "build": "tsdown",
+    "dev": "tsdown --watch",
+    "start": "node dist/cli.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint --type-aware --type-check",
     "lint:fix": "oxlint --type-aware --type-check --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "fmt": "pnpm run format",
+    "fmt:check": "pnpm run format:check",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
@@ -28,6 +52,9 @@
     "oxlint-tsgolint": "^0.11.1",
     "tsdown": "^0.20.1",
     "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "packageManager": "pnpm@10.28.1"
 }
