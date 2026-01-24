@@ -110,7 +110,10 @@ export async function runCi() {
     const ciWorkflowPath = path.join(rootDir, ".github/workflows/ci.yml");
     const releaseWorkflowPath = path.join(rootDir, ".github/workflows/release.yml");
 
-    const shouldWriteCi = await confirmOverwriteIfExists(ciWorkflowPath, ".github/workflows/ci.yml");
+    const shouldWriteCi = await confirmOverwriteIfExists(
+      ciWorkflowPath,
+      ".github/workflows/ci.yml",
+    );
     if (!shouldWriteCi) {
       cancel("Skipped CI workflow");
       process.exitCode = 0;
@@ -140,13 +143,11 @@ export async function runCi() {
       if (shouldWriteRelease) {
         await writeText(
           releaseWorkflowPath,
-          (
-            releaseMode === "both"
-              ? githubCliReleaseBothWorkflowTemplate
-              : releaseMode === "commit"
-                ? githubCliReleaseWorkflowTemplate
-                : githubCliReleaseTagWorkflowTemplate
-          )({
+          (releaseMode === "both"
+            ? githubCliReleaseBothWorkflowTemplate
+            : releaseMode === "commit"
+              ? githubCliReleaseWorkflowTemplate
+              : githubCliReleaseTagWorkflowTemplate)({
             packageManager,
             nodeVersion,
             workingDirectory,
@@ -190,7 +191,9 @@ async function confirmOverwriteIfExists(absPath: string, label: string) {
 }
 
 function isPackageManager(value: string): value is PackageManager {
-  return value === "npm" || value === "pnpm" || value === "yarn" || value === "bun" || value === "deno";
+  return (
+    value === "npm" || value === "pnpm" || value === "yarn" || value === "bun" || value === "deno"
+  );
 }
 
 async function detectPackageManager(rootDir: string): Promise<PackageManager | undefined> {
@@ -206,19 +209,26 @@ async function detectPackageManager(rootDir: string): Promise<PackageManager | u
   if (await pathExists(path.join(rootDir, "yarn.lock"))) candidates.push("yarn");
   if (await pathExists(path.join(rootDir, "package-lock.json"))) candidates.push("npm");
   if (await pathExists(path.join(rootDir, "bun.lockb"))) candidates.push("bun");
-  if (await pathExists(path.join(rootDir, "deno.json")) || (await pathExists(path.join(rootDir, "deno.jsonc"))))
+  if (
+    (await pathExists(path.join(rootDir, "deno.json"))) ||
+    (await pathExists(path.join(rootDir, "deno.jsonc")))
+  )
     candidates.push("deno");
 
   return candidates.length === 1 ? candidates[0] : undefined;
 }
 
-async function listPackageCandidates(rootDir: string, packageManager: PackageManager): Promise<string[]> {
+async function listPackageCandidates(
+  rootDir: string,
+  packageManager: PackageManager,
+): Promise<string[]> {
   const candidates = new Set<string>();
 
   if (await pathExists(path.join(rootDir, "package.json"))) candidates.add(".");
   if (
     packageManager === "deno" &&
-    ((await pathExists(path.join(rootDir, "deno.json"))) || (await pathExists(path.join(rootDir, "deno.jsonc"))))
+    ((await pathExists(path.join(rootDir, "deno.json"))) ||
+      (await pathExists(path.join(rootDir, "deno.jsonc"))))
   ) {
     candidates.add(".");
   }
@@ -338,7 +348,9 @@ async function resolveCiCommands(
       : undefined;
 
   const testCommand =
-    runTests && !hasTest ? await promptCommand("Test command", pmRun(packageManager, "test")) : undefined;
+    runTests && !hasTest
+      ? await promptCommand("Test command", pmRun(packageManager, "test"))
+      : undefined;
 
   return {
     runLint,

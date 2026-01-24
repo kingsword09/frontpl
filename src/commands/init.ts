@@ -229,13 +229,11 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
 
     await writeText(
       path.join(rootDir, ".github/workflows/release.yml"),
-      (
-        releaseMode === "both"
-          ? githubCliReleaseBothWorkflowTemplate
-          : releaseMode === "commit"
-            ? githubCliReleaseWorkflowTemplate
-            : githubCliReleaseTagWorkflowTemplate
-      )({
+      (releaseMode === "both"
+        ? githubCliReleaseBothWorkflowTemplate
+        : releaseMode === "commit"
+          ? githubCliReleaseWorkflowTemplate
+          : githubCliReleaseTagWorkflowTemplate)({
         packageManager,
         nodeVersion: 22,
         workingDirectory,
