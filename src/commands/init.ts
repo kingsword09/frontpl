@@ -1,13 +1,18 @@
 import { cancel, confirm, intro, isCancel, outro, select, spinner, text } from "@clack/prompts";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
 import { exec } from "../lib/exec.js";
+import { writeText } from "../lib/fs.js";
 import { detectPackageManagerVersion } from "../lib/versions.js";
 import {
   editorconfigTemplate,
   gitattributesTemplate,
+  githubCliCiWorkflowTemplate,
+  githubCliReleaseBothWorkflowTemplate,
+  githubCliReleaseWorkflowTemplate,
+  githubCliReleaseTagWorkflowTemplate,
   gitignoreTemplate,
   oxfmtConfigTemplate,
   oxlintConfigTemplate,
@@ -21,6 +26,8 @@ import {
 import { pathExists } from "../lib/utils.js";
 
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
+type GithubActionsPreset = "none" | "ci" | "ci+release";
+type GithubReleaseMode = "tag" | "commit" | "both";
 
 export async function runInit({ nameArg }: { nameArg?: string }) {
   intro("frontpl");
@@ -83,6 +90,40 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
     initialValue: true,
   });
   if (isCancel(initGit)) return onCancel();
+
+  const githubActions = await select<GithubActionsPreset>({
+    message: "GitHub Actions workflows",
+    initialValue: "ci",
+    options: [
+      { value: "none", label: "None" },
+      { value: "ci", label: "CI only" },
+      { value: "ci+release", label: "CI + release" },
+    ],
+  });
+  if (isCancel(githubActions)) return onCancel();
+
+  const releaseMode =
+    githubActions === "ci+release"
+      ? await select<GithubReleaseMode>({
+          message: "Release workflows",
+          initialValue: "tag",
+          options: [
+            { value: "tag", label: "Tag push (vX.Y.Z) — recommended" },
+            { value: "commit", label: "Release commit (chore(release): vX.Y.Z) — legacy" },
+            { value: "both", label: "Both (tag + commit)" },
+          ],
+        })
+      : undefined;
+  if (isCancel(releaseMode)) return onCancel();
+
+  const trustedPublishing =
+    githubActions === "ci+release" && packageManager !== "deno"
+      ? await confirm({
+          message: "Release: npm trusted publishing (OIDC)?",
+          initialValue: true,
+        })
+      : undefined;
+  if (isCancel(trustedPublishing)) return onCancel();
 
   const rootDir = path.resolve(process.cwd(), projectName);
   if (await pathExists(rootDir)) {
@@ -167,6 +208,42 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
     );
   }
 
+  if (githubActions !== "none") {
+    const workingDirectory = pnpmWorkspace ? path.posix.join("packages", projectName) : ".";
+
+    await writeText(
+      path.join(rootDir, ".github/workflows/ci.yml"),
+      githubCliCiWorkflowTemplate({
+        packageManager,
+        nodeVersion: 22,
+        workingDirectory,
+        runLint: useOxlint,
+        runFormatCheck: useOxfmt,
+        runTests: useVitest,
+      }),
+    );
+  }
+
+  if (githubActions === "ci+release") {
+    const workingDirectory = pnpmWorkspace ? path.posix.join("packages", projectName) : ".";
+
+    await writeText(
+      path.join(rootDir, ".github/workflows/release.yml"),
+      (
+        releaseMode === "both"
+          ? githubCliReleaseBothWorkflowTemplate
+          : releaseMode === "commit"
+            ? githubCliReleaseWorkflowTemplate
+            : githubCliReleaseTagWorkflowTemplate
+      )({
+        packageManager,
+        nodeVersion: 22,
+        workingDirectory,
+        trustedPublishing,
+      }),
+    );
+  }
+
   const canInstall = Boolean(pmVersion);
   let installOk = false;
   if (canInstall) {
@@ -203,11 +280,6 @@ function validateProjectName(value: string) {
 function onCancel() {
   cancel("Cancelled");
   process.exitCode = 0;
-}
-
-async function writeText(filePath: string, contents: string) {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, contents, "utf8");
 }
 
 function nextStepHint(pm: PackageManager) {
