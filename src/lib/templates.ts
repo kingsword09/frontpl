@@ -143,6 +143,8 @@ export function packageJsonTemplate(opts: {
   }
 
   if (opts.useOxfmt) {
+    scripts.format = "oxfmt";
+    scripts["format:check"] = "oxfmt --check";
     scripts.fmt = "oxfmt";
     scripts["fmt:check"] = "oxfmt --check";
   }
@@ -183,4 +185,167 @@ export function packageJsonTemplate(opts: {
       2,
     ) + "\n"
   );
+}
+
+export function githubCliCiWorkflowTemplate(opts: {
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
+  nodeVersion: number;
+  workingDirectory: string;
+  runLint: boolean;
+  runFormatCheck: boolean;
+  runTests: boolean;
+  installCommand?: string;
+  lintCommand?: string;
+  formatCheckCommand?: string;
+  testCommand?: string;
+  workflowsRef?: string;
+}) {
+  const ref = opts.workflowsRef ?? "v1";
+  const installCommand = opts.installCommand?.trim();
+  const lintCommand = opts.lintCommand?.trim();
+  const formatCheckCommand = opts.formatCheckCommand?.trim();
+  const testCommand = opts.testCommand?.trim();
+  return [
+    "name: CI",
+    "",
+    "on:",
+    "  push:",
+    "    branches: [main]",
+    "  pull_request:",
+    "    branches: [main]",
+    "",
+    "jobs:",
+    "  ci:",
+    `    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@${ref}`,
+    "    with:",
+    `      packageManager: ${opts.packageManager}`,
+    `      nodeVersion: ${opts.nodeVersion}`,
+    `      workingDirectory: ${opts.workingDirectory}`,
+    `      runLint: ${opts.runLint}`,
+    `      runFormatCheck: ${opts.runFormatCheck}`,
+    `      runTests: ${opts.runTests}`,
+    ...(installCommand ? [`      installCommand: ${yamlString(installCommand)}`] : []),
+    ...(lintCommand ? [`      lintCommand: ${yamlString(lintCommand)}`] : []),
+    ...(formatCheckCommand ? [`      formatCheckCommand: ${yamlString(formatCheckCommand)}`] : []),
+    ...(testCommand ? [`      testCommand: ${yamlString(testCommand)}`] : []),
+    "",
+  ].join("\n");
+}
+
+export function githubCliReleaseWorkflowTemplate(opts: {
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
+  nodeVersion: number;
+  workingDirectory: string;
+  trustedPublishing?: boolean;
+  workflowsRef?: string;
+}) {
+  const ref = opts.workflowsRef ?? "v1";
+  const trustedPublishing = opts.trustedPublishing;
+  const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
+  return [
+    "name: Release",
+    "",
+    "on:",
+    "  push:",
+    "    branches: [main]",
+    "",
+    "jobs:",
+    "  release:",
+    "    permissions:",
+    "      contents: write",
+    "      id-token: write",
+    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}`,
+    "    with:",
+    `      packageManager: ${opts.packageManager}`,
+    `      nodeVersion: ${opts.nodeVersion}`,
+    `      workingDirectory: ${opts.workingDirectory}`,
+    ...(trustedPublishing === undefined ? [] : [`      trustedPublishing: ${trustedPublishing}`]),
+    ...(needsNpmToken ? ["    secrets:", "      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}"] : []),
+    "",
+  ].join("\n");
+}
+
+export function githubCliReleaseTagWorkflowTemplate(opts: {
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
+  nodeVersion: number;
+  workingDirectory: string;
+  trustedPublishing?: boolean;
+  workflowsRef?: string;
+}) {
+  const ref = opts.workflowsRef ?? "v1";
+  const trustedPublishing = opts.trustedPublishing;
+  const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
+  return [
+    "name: Release",
+    "",
+    "on:",
+    "  push:",
+    "    tags: [v*.*.*]",
+    "",
+    "jobs:",
+    "  release:",
+    "    permissions:",
+    "      contents: write",
+    "      id-token: write",
+    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}`,
+    "    with:",
+    `      packageManager: ${opts.packageManager}`,
+    `      nodeVersion: ${opts.nodeVersion}`,
+    `      workingDirectory: ${opts.workingDirectory}`,
+    ...(trustedPublishing === undefined ? [] : [`      trustedPublishing: ${trustedPublishing}`]),
+    ...(needsNpmToken ? ["    secrets:", "      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}"] : []),
+    "",
+  ].join("\n");
+}
+
+export function githubCliReleaseBothWorkflowTemplate(opts: {
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
+  nodeVersion: number;
+  workingDirectory: string;
+  trustedPublishing?: boolean;
+  workflowsRef?: string;
+}) {
+  const ref = opts.workflowsRef ?? "v1";
+  const trustedPublishing = opts.trustedPublishing;
+  const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
+  return [
+    "name: Release",
+    "",
+    "on:",
+    "  push:",
+    "    branches: [main]",
+    "    tags: [v*.*.*]",
+    "",
+    "jobs:",
+    "  release_tag:",
+    "    if: startsWith(github.ref, 'refs/tags/')",
+    "    permissions:",
+    "      contents: write",
+    "      id-token: write",
+    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}`,
+    "    with:",
+    `      packageManager: ${opts.packageManager}`,
+    `      nodeVersion: ${opts.nodeVersion}`,
+    `      workingDirectory: ${opts.workingDirectory}`,
+    ...(trustedPublishing === undefined ? [] : [`      trustedPublishing: ${trustedPublishing}`]),
+    ...(needsNpmToken ? ["    secrets:", "      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}"] : []),
+    "",
+    "  release_commit:",
+    "    if: startsWith(github.ref, 'refs/heads/')",
+    "    permissions:",
+    "      contents: write",
+    "      id-token: write",
+    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}`,
+    "    with:",
+    `      packageManager: ${opts.packageManager}`,
+    `      nodeVersion: ${opts.nodeVersion}`,
+    `      workingDirectory: ${opts.workingDirectory}`,
+    ...(trustedPublishing === undefined ? [] : [`      trustedPublishing: ${trustedPublishing}`]),
+    ...(needsNpmToken ? ["    secrets:", "      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}"] : []),
+    "",
+  ].join("\n");
+}
+
+function yamlString(value: string) {
+  return JSON.stringify(value);
 }

@@ -8,4 +8,5 @@ Interactive CLI to scaffold standardized frontend project templates.
 pnpm install
 pnpm run build
 node dist/cli.mjs --help
+node dist/cli.mjs ci
 ```
