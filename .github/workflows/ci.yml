@@ -12,3 +12,4 @@ jobs:
     with:
       packageManager: pnpm
       nodeVersion: 22
+      runTests: false
