@@ -336,21 +336,27 @@ async function resolveCiCommands(
   if (isCancel(runTests)) return abort();
 
   const lintCommand =
-    runLint && !hasLint
-      ? await promptCommand("Lint command", pmRun(packageManager, "lint"))
-      : undefined;
+    runLint && hasLint
+      ? pmRun(packageManager, "lint")
+      : runLint
+        ? await promptCommand("Lint command", pmRun(packageManager, "lint"))
+        : undefined;
 
   const formatCheckCommand =
-    runFormatCheck && !hasFormatCheck
-      ? hasFmtCheck
+    runFormatCheck && hasFormatCheck
+      ? pmRun(packageManager, "format:check")
+      : runFormatCheck && hasFmtCheck
         ? pmRun(packageManager, "fmt:check")
-        : await promptCommand("Format check command", pmRun(packageManager, "format:check"))
-      : undefined;
+        : runFormatCheck
+          ? await promptCommand("Format check command", pmRun(packageManager, "format:check"))
+          : undefined;
 
   const testCommand =
-    runTests && !hasTest
-      ? await promptCommand("Test command", pmRun(packageManager, "test"))
-      : undefined;
+    runTests && hasTest
+      ? pmRun(packageManager, "test")
+      : runTests
+        ? await promptCommand("Test command", pmRun(packageManager, "test"))
+        : undefined;
 
   return {
     runLint,

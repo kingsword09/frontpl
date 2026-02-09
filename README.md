@@ -28,6 +28,9 @@ Follow the prompts to choose:
 
 - Package manager (`npm`/`pnpm`/`yarn`/`bun`/`deno`)
 - Optional tooling: `oxlint`, `oxfmt`, `vitest`, `tsdown`
+
+When `oxlint` is enabled, generated projects use `@kingsword/lint-config` via `oxlint.config.ts`.
+
 - Git init
 - GitHub Actions workflows:
   - CI only
@@ -44,7 +47,7 @@ Generated output includes (based on options):
 - `.editorconfig`, `.gitignore`, `.gitattributes`
 - `package.json` (+ scripts like `typecheck`, optional `lint`, `format:check`, `test`, `build`)
 - `tsconfig.json`, `src/index.ts`
-- Optional configs: `.oxlintrc.json`, `.oxfmtrc.json`, `tsdown.config.ts`
+- Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
 - Optional GitHub Actions workflows in `.github/workflows/`
 
 ### `frontpl ci`
@@ -87,3 +90,7 @@ pnpm run build
 node dist/cli.mjs --help
 node dist/cli.mjs ci
 ```
+
+## Lint preset
+
+This repository itself uses `@kingsword/lint-config` (see `oxlint.config.ts`).

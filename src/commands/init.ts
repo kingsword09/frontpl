@@ -29,6 +29,21 @@ type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 type GithubActionsPreset = "none" | "ci" | "ci+release";
 type GithubReleaseMode = "tag" | "commit" | "both";
 
+function pmRun(pm: PackageManager, script: string) {
+  switch (pm) {
+    case "npm":
+      return `npm run ${script}`;
+    case "pnpm":
+      return `pnpm run ${script}`;
+    case "yarn":
+      return `yarn ${script}`;
+    case "bun":
+      return `bun run ${script}`;
+    case "deno":
+      return script;
+  }
+}
+
 export async function runInit({ nameArg }: { nameArg?: string }) {
   intro("frontpl");
 
@@ -62,7 +77,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   if (isCancel(pnpmWorkspace)) return onCancel();
 
   const useOxlint = await confirm({
-    message: "Enable oxlint (type-aware + type-check via tsgolint)?",
+    message: "Enable oxlint (@kingsword/lint-config preset)?",
     initialValue: true,
   });
   if (isCancel(useOxlint)) return onCancel();
@@ -179,6 +194,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         useOxlint,
         oxlintVersion: "latest",
         oxlintTsgolintVersion: "latest",
+        kingswordLintConfigVersion: "^0.1.1",
         useOxfmt,
         oxfmtVersion: "latest",
         useVitest,
@@ -190,7 +206,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   ]);
 
   if (useOxlint) {
-    await writeText(path.join(pkgDir, ".oxlintrc.json"), oxlintConfigTemplate({ useVitest }));
+    await writeText(path.join(pkgDir, "oxlint.config.ts"), oxlintConfigTemplate({ useVitest }));
   }
   if (useOxfmt) {
     await writeText(path.join(pkgDir, ".oxfmtrc.json"), oxfmtConfigTemplate());
@@ -210,6 +226,12 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
 
   if (githubActions !== "none") {
     const workingDirectory = pnpmWorkspace ? path.posix.join("packages", projectName) : ".";
+    const lintCommand =
+      useOxlint && packageManager !== "deno" ? pmRun(packageManager, "lint") : undefined;
+    const formatCheckCommand =
+      useOxfmt && packageManager !== "deno" ? pmRun(packageManager, "format:check") : undefined;
+    const testCommand =
+      useVitest && packageManager !== "deno" ? pmRun(packageManager, "test") : undefined;
 
     await writeText(
       path.join(rootDir, ".github/workflows/ci.yml"),
@@ -220,6 +242,9 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         runLint: useOxlint,
         runFormatCheck: useOxfmt,
         runTests: useVitest,
+        lintCommand,
+        formatCheckCommand,
+        testCommand,
       }),
     );
   }
