@@ -308,14 +308,14 @@ function onCancel() {
 function nextStepHint(pm: PackageManager) {
   switch (pm) {
     case "npm":
-      return "npm run typecheck";
+      return "npm run lint";
     case "pnpm":
-      return "pnpm run typecheck";
+      return "pnpm run lint";
     case "yarn":
-      return "yarn typecheck";
+      return "yarn lint";
     case "bun":
-      return "bun run typecheck";
+      return "bun run lint";
     case "deno":
-      return "deno task typecheck  # (or run the package.json scripts with your preferred runner)";
+      return "deno task lint  # (or run the package.json scripts with your preferred runner)";
   }
 }

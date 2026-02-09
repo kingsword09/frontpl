@@ -119,14 +119,14 @@ export function packageJsonTemplate(opts: {
   useTsdown: boolean;
   tsdownVersion?: string;
 }) {
-  const scripts: Record<string, string> = {
-    typecheck: "tsc --noEmit",
-  };
+  const scripts: Record<string, string> = {};
 
   if (opts.useOxlint) {
     const oxlintCmd = "oxlint --type-aware --type-check";
     scripts.lint = oxlintCmd;
     scripts["lint:fix"] = `${oxlintCmd} --fix`;
+  } else {
+    scripts.typecheck = "tsc --noEmit";
   }
 
   if (opts.useOxfmt) {
