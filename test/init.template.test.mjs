@@ -30,11 +30,31 @@ void test("package template adds kingsword lint dependency", () => {
 
   const pkg = JSON.parse(pkgText);
 
+  assert.equal(pkg.scripts.typecheck, undefined);
   assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
   assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
   assert.equal(pkg.devDependencies.oxlint, "latest");
   assert.equal(pkg.devDependencies["@kingsword/lint-config"], "^0.1.1");
   assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
+});
+
+void test("package template falls back to tsc typecheck when oxlint is disabled", () => {
+  const pkgText = packageJsonTemplate({
+    name: "demo-app",
+    packageManager: "pnpm@10.28.1",
+    typescriptVersion: "latest",
+    useOxlint: false,
+    useOxfmt: false,
+    useVitest: false,
+    useTsdown: false,
+  });
+
+  const pkg = JSON.parse(pkgText);
+
+  assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
+  assert.equal(pkg.scripts.lint, undefined);
+  assert.equal(pkg.devDependencies.oxlint, undefined);
+  assert.equal(pkg.devDependencies["@kingsword/lint-config"], undefined);
 });
 
 void test("ci template can pin explicit run commands", () => {

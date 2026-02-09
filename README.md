@@ -45,7 +45,7 @@ Scaffold a new project into `./<name>` (or prompt for a name when omitted).
 Generated output includes (based on options):
 
 - `.editorconfig`, `.gitignore`, `.gitattributes`
-- `package.json` (+ scripts like `typecheck`, optional `lint`, `format:check`, `test`, `build`)
+- `package.json` (+ scripts like optional `lint`, `format:check`, `test`, `build`)
 - `tsconfig.json`, `src/index.ts`
 - Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
 - Optional GitHub Actions workflows in `.github/workflows/`
@@ -85,7 +85,7 @@ frontpl generates workflows that call reusable workflows from `kingsword09/workf
 
 ```sh
 pnpm install
-pnpm run typecheck
+pnpm run lint
 pnpm run build
 node dist/cli.mjs --help
 node dist/cli.mjs ci
