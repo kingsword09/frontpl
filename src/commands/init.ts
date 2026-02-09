@@ -13,6 +13,7 @@ import {
   githubCliReleaseBothWorkflowTemplate,
   githubCliReleaseWorkflowTemplate,
   githubCliReleaseTagWorkflowTemplate,
+  githubDependabotTemplate,
   gitignoreTemplate,
   oxfmtConfigTemplate,
   oxlintConfigTemplate,
@@ -131,6 +132,15 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
       : undefined;
   if (isCancel(releaseMode)) return onCancel();
 
+  const addDependabot =
+    initGit && githubActions !== "none"
+      ? await confirm({
+          message: "Add Dependabot config (.github/dependabot.yml)?",
+          initialValue: true,
+        })
+      : false;
+  if (isCancel(addDependabot)) return onCancel();
+
   const trustedPublishing =
     githubActions === "ci+release" && packageManager !== "deno"
       ? await confirm({
@@ -247,6 +257,16 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         testCommand,
       }),
     );
+
+    if (addDependabot) {
+      await writeText(
+        path.join(rootDir, ".github/dependabot.yml"),
+        githubDependabotTemplate({
+          packageManager,
+          workingDirectory,
+        }),
+      );
+    }
   }
 
   if (githubActions === "ci+release") {

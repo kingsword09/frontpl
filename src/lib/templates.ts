@@ -338,6 +338,67 @@ export function githubCliReleaseBothWorkflowTemplate(opts: {
   ].join("\n");
 }
 
+function toDependabotDirectory(workingDirectory: string): string {
+  const normalized = workingDirectory.trim();
+  if (!normalized || normalized === ".") return "/";
+  return normalized.startsWith("/") ? normalized : `/${normalized}`;
+}
+
+function resolveDependabotPackageEcosystem(
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno",
+): "npm" | undefined {
+  if (packageManager === "deno") return;
+  return "npm";
+}
+
+export function githubDependabotTemplate(opts: {
+  packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
+  workingDirectory: string;
+}) {
+  const packageEcosystem = resolveDependabotPackageEcosystem(opts.packageManager);
+  const directory = toDependabotDirectory(opts.workingDirectory);
+
+  return [
+    "version: 2",
+    "updates:",
+    ...(packageEcosystem
+      ? [
+          `  - package-ecosystem: "${packageEcosystem}"`,
+          `    directory: "${directory}"`,
+          "    schedule:",
+          '      interval: "weekly"',
+          '      day: "monday"',
+          '      time: "03:00"',
+          '      timezone: "America/Los_Angeles"',
+          "    open-pull-requests-limit: 10",
+          "    groups:",
+          "      dependencies:",
+          "        patterns:",
+          '          - "*"',
+          "    labels:",
+          '      - "dependencies"',
+          "",
+        ]
+      : []),
+    '  - package-ecosystem: "github-actions"',
+    '    directory: "/"',
+    "    schedule:",
+    '      interval: "weekly"',
+    '      day: "monday"',
+    '      time: "03:00"',
+    '      timezone: "America/Los_Angeles"',
+    "    open-pull-requests-limit: 10",
+    "    groups:",
+    "      github-actions:",
+    "        patterns:",
+    '          - "*"',
+    "    labels:",
+    '      - "dependencies"',
+    '      - "github-actions"',
+    "",
+  ].join("\n");
+}
+
 function yamlString(value: string) {
   return JSON.stringify(value);
 }

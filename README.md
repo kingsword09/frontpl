@@ -61,6 +61,7 @@ What it does:
 - Detects Node.js major version from `.nvmrc`, `.node-version`, or `package.json#engines.node` (defaults to `22`)
 - Generates `.github/workflows/ci.yml`
 - Optionally generates `.github/workflows/release.yml` (tag/commit/both)
+- Optionally generates `.github/dependabot.yml` with grouped updates (`dependencies`, `github-actions`)
 
 ## GitHub Actions (CI + Release)
 
@@ -80,6 +81,15 @@ frontpl generates workflows that call reusable workflows from `kingsword09/workf
 
 - **Trusted publishing (OIDC)**: enable `trustedPublishing: true` (no `NPM_TOKEN` required). Your repo must be configured on npm as a trusted publisher for the calling workflow.
 - **NPM token**: set `trustedPublishing: false` and provide `NPM_TOKEN` in GitHub secrets.
+
+## Dependabot (optional)
+
+When CI workflows are enabled, frontpl can also generate `.github/dependabot.yml`:
+
+- Keeps `github-actions` updates enabled
+- Adds grouped dependencies updates (`groups.dependencies`)
+- Uses the selected `workingDirectory` (`.` -> `/`, monorepo package -> `/packages/<name>`)
+- Maps JavaScript package managers (`npm`/`pnpm`/`yarn`/`bun`) to Dependabot `package-ecosystem: "npm"`
 
 ## Development
 
