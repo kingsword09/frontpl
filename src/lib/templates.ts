@@ -71,20 +71,13 @@ export function readmeTemplate(projectName: string) {
 }
 
 export function oxlintConfigTemplate({ useVitest }: { useVitest: boolean }) {
-  void useVitest;
-  return (
-    JSON.stringify(
-      {
-        $schema: "https://json.schemastore.org/oxlintrc.json",
-        env: {
-          browser: true,
-          es2022: true,
-        },
-      },
-      null,
-      2,
-    ) + "\n"
-  );
+  return [
+    'import { defineConfig } from "oxlint";',
+    'import { oxlint } from "@kingsword/lint-config/config";',
+    "",
+    `export default defineConfig(oxlint({ profile: "lib", test: "${useVitest ? "vitest" : "none"}", level: "recommended" }));`,
+    "",
+  ].join("\n");
 }
 
 export function oxfmtConfigTemplate() {
@@ -118,6 +111,7 @@ export function packageJsonTemplate(opts: {
   useOxlint: boolean;
   oxlintVersion?: string;
   oxlintTsgolintVersion?: string;
+  kingswordLintConfigVersion?: string;
   useOxfmt: boolean;
   oxfmtVersion?: string;
   useVitest: boolean;
@@ -130,14 +124,7 @@ export function packageJsonTemplate(opts: {
   };
 
   if (opts.useOxlint) {
-    const oxlintCmd = [
-      "oxlint",
-      opts.useVitest ? "--vitest-plugin" : undefined,
-      "--type-aware",
-      "--type-check",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const oxlintCmd = "oxlint --type-aware --type-check";
     scripts.lint = oxlintCmd;
     scripts["lint:fix"] = `${oxlintCmd} --fix`;
   }
@@ -163,7 +150,12 @@ export function packageJsonTemplate(opts: {
 
   if (opts.useOxlint) {
     if (opts.oxlintVersion) devDependencies.oxlint = opts.oxlintVersion;
-    if (opts.oxlintTsgolintVersion) devDependencies["oxlint-tsgolint"] = opts.oxlintTsgolintVersion;
+    if (opts.oxlintTsgolintVersion) {
+      devDependencies["oxlint-tsgolint"] = opts.oxlintTsgolintVersion;
+    }
+    if (opts.kingswordLintConfigVersion) {
+      devDependencies["@kingsword/lint-config"] = opts.kingswordLintConfigVersion;
+    }
   }
 
   if (opts.useOxfmt && opts.oxfmtVersion) devDependencies.oxfmt = opts.oxfmtVersion;
