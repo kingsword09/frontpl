@@ -1,35 +1,61 @@
 # frontpl / AGENTS.md
 
-你是一名经验丰富的软件开发工程师/代码架构师，目标是以 **KISS / YAGNI / SOLID / DRY** 为核心原则，审查、理解并迭代式地改进本代码库。
+适用范围：仓库根目录及其全部子目录。
 
-## 核心原则
+## 核心原则（强制）
 
-- **简单至上 (KISS)**：优先用最直接的实现解决问题，避免“为了优雅”而引入复杂度。
-- **精益求精 (YAGNI)**：只做当前需求明确需要的能力，不为不确定的未来预留大而全的扩展点。
-- **坚实基础 (SOLID)**：
-  - **SRP**：命令、模板、I/O、检测逻辑保持职责单一。
-  - **OCP**：新增模板/选项尽量通过新增函数或参数扩展，避免到处改动。
-  - **LSP/ISP/DIP**：避免“胖接口”，让依赖面向抽象（例如小型 helper / 纯函数）。
-- **杜绝重复 (DRY)**：跨命令复用文件写入、检测逻辑、模板函数，避免复制粘贴。
+- **KISS**：优先最小改动与直接实现，避免过度设计。
+- **YAGNI**：只实现当前确定需求，不预埋不必要能力。
+- **DRY**：模板、命令、提示文案优先复用，避免重复逻辑。
+- **SOLID（重点 SRP/OCP）**：CLI 入口、命令逻辑、模板生成、I/O 分层清晰。
 
-## 工作流程要求
+## 仓库技术约定（强制）
 
-1. **理解阶段**
-   - 阅读相关代码与文档，搞清楚现有架构、入口命令、模板生成逻辑和约束。
-   - 识别可能违反 KISS/YAGNI/DRY/SOLID 的点（例如重复逻辑、过度抽象、耦合）。
-2. **规划阶段**
-   - 明确本次迭代的范围与可验证产出（例如新增命令/模板、更新文档、修复 bug）。
-   - 拆分成小步骤，优先选择最小可行改动。
-3. **执行阶段**
-   - 按步骤实现，每一步都说明如何体现 KISS/YAGNI/DRY/SOLID。
-   - 修改完成后进行必要的本地验证（至少 `pnpm run typecheck` / `pnpm run build`）。
-4. **汇报阶段**
-   - 总结本次改动的核心成果、体现的原则、遇到的问题与解决方式。
-   - 给出下一步可选优化建议（明确且可执行）。
+- 运行时：Node `>=22`。
+- 模块形态：TypeScript + ESM（NodeNext）。
+- 包管理：`pnpm`（保持 `pnpm-lock.yaml` 为唯一锁文件）。
+- 命令入口：`src/cli.ts`。
+- 命令实现：`src/commands/*`。
+- 模板集中：`src/lib/templates.ts`（避免散落）。
 
-## 本仓库约定
+## Lint 约定（强制）
 
-- **TypeScript + ESM**：保持与现有代码一致（NodeNext/ESM）。
-- **命令入口**：`src/cli.ts`；命令实现放在 `src/commands/*`。
-- **模板集中管理**：新模板优先加在 `src/lib/templates.ts`，避免散落。
-- **面向用户的变更**：同时更新 `README.md`（用法/行为/注意事项）。
+1. 默认采用 `@kingsword/lint-config` + `oxlint.config.ts`。
+2. 当 `useOxlint=true`（默认）时：
+   - 使用 `lint: oxlint --type-aware --type-check`
+   - 使用 `lint:fix: oxlint --type-aware --type-check --fix`
+   - 不额外生成 `typecheck: tsc --noEmit`（避免重复检查）
+3. 当 `useOxlint=false` 时：
+   - 回退为 `typecheck: tsc --noEmit`
+4. 不回退到旧的 `.oxlintrc.json` 方案。
+
+## CI 生成约定（强制）
+
+- `init` / `ci` 生成 CI 工作流时，若脚本存在，应显式写入：
+  - `lintCommand`
+  - `formatCheckCommand`
+  - `testCommand`
+- 目标是减少 reusable workflow 的隐式推断，保证行为稳定。
+
+## 文档同步（强制）
+
+涉及以下变更时必须同步 `README.md`：
+
+- 初始化交互行为
+- 生成文件清单
+- lint/typecheck 策略
+- CI/Release 行为
+
+## 变更后验证（建议）
+
+1. `pnpm run format:check`
+2. `pnpm run typecheck`
+3. `pnpm run build`
+4. `pnpm run lint`
+5. `node --test test/init.template.test.mjs`
+
+## PR 合并门禁（精简）
+
+1. 以上验证全通过。
+2. 模板行为变更有对应测试断言更新。
+3. README 与实际生成行为一致。
