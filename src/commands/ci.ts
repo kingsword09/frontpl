@@ -9,6 +9,7 @@ import {
   githubCliReleaseBothWorkflowTemplate,
   githubCliReleaseTagWorkflowTemplate,
   githubCliReleaseWorkflowTemplate,
+  githubDependabotTemplate,
 } from "../lib/templates.js";
 import { pathExists } from "../lib/utils.js";
 
@@ -107,8 +108,18 @@ export async function runCi() {
         : undefined;
     if (isCancel(trustedPublishing)) return abort();
 
+    const hasGitRepo = await pathExists(path.join(rootDir, ".git"));
+    const addDependabot = hasGitRepo
+      ? await confirm({
+          message: "Add/update Dependabot config (.github/dependabot.yml)?",
+          initialValue: true,
+        })
+      : false;
+    if (isCancel(addDependabot)) return abort();
+
     const ciWorkflowPath = path.join(rootDir, ".github/workflows/ci.yml");
     const releaseWorkflowPath = path.join(rootDir, ".github/workflows/release.yml");
+    const dependabotPath = path.join(rootDir, ".github/dependabot.yml");
 
     const shouldWriteCi = await confirmOverwriteIfExists(
       ciWorkflowPath,
@@ -157,10 +168,26 @@ export async function runCi() {
       }
     }
 
+    if (addDependabot) {
+      const shouldWriteDependabot = await confirmOverwriteIfExists(
+        dependabotPath,
+        ".github/dependabot.yml",
+      );
+      if (shouldWriteDependabot) {
+        await writeText(
+          dependabotPath,
+          githubDependabotTemplate({
+            packageManager,
+            workingDirectory,
+          }),
+        );
+      }
+    }
+
     outro(
       addRelease
-        ? "Done. Generated CI + release workflows in .github/workflows/."
-        : "Done. Generated CI workflow in .github/workflows/.",
+        ? "Done. Generated CI + release workflows (and optional Dependabot)."
+        : "Done. Generated CI workflow (and optional Dependabot).",
     );
   } catch (err) {
     if (err instanceof CancelledError) return;

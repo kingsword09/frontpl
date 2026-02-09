@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { oxlintConfigTemplate, packageJsonTemplate } from "../dist/index.mjs";
+import {
+  githubDependabotTemplate,
+  oxlintConfigTemplate,
+  packageJsonTemplate,
+} from "../dist/index.mjs";
 import { githubCliCiWorkflowTemplate } from "../dist/index.mjs";
 
 void test("oxlint template uses @kingsword/lint-config", () => {
@@ -73,4 +77,35 @@ void test("ci template can pin explicit run commands", () => {
   assert.match(workflow, /lintCommand: "pnpm run lint"/);
   assert.match(workflow, /formatCheckCommand: "pnpm run format:check"/);
   assert.match(workflow, /testCommand: "pnpm run test"/);
+});
+
+void test("dependabot template maps root directory and includes groups", () => {
+  const config = githubDependabotTemplate({
+    packageManager: "pnpm",
+    workingDirectory: ".",
+  });
+
+  assert.match(config, /package-ecosystem: "npm"/);
+  assert.match(config, /directory: "\/"/);
+  assert.match(config, /dependencies:/);
+  assert.match(config, /github-actions:/);
+});
+
+void test("dependabot template maps monorepo package directory", () => {
+  const config = githubDependabotTemplate({
+    packageManager: "pnpm",
+    workingDirectory: "packages/web",
+  });
+
+  assert.match(config, /directory: "\/packages\/web"/);
+});
+
+void test("dependabot template keeps github-actions updates for deno", () => {
+  const config = githubDependabotTemplate({
+    packageManager: "deno",
+    workingDirectory: ".",
+  });
+
+  assert.doesNotMatch(config, /package-ecosystem: "npm"/);
+  assert.match(config, /package-ecosystem: "github-actions"/);
 });
