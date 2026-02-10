@@ -9,7 +9,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    uses: kingsword09/workflows/.github/workflows/cli-release.yml@7320d30bcd47cee17cc2d8d28250ba1ab1f742b8 # v1.0.3
+    uses: kingsword09/workflows/.github/workflows/cli-release.yml@25bf23cc1773b5289fcc2e34cfc3c6480e9d2079 # v1.0.4
     with:
       packageManager: pnpm
       nodeVersion: 22
