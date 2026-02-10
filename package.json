@@ -49,8 +49,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
-    "tiny-bin": "^1.11.3"
+    "@clack/prompts": "^1.0.0",
+    "tiny-bin": "^2.0.0"
   },
   "devDependencies": {
     "@kingsword/lint-config": "^0.1.1",
