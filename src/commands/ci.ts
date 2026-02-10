@@ -68,7 +68,7 @@ export async function runCi() {
     const nodeVersionText = await text({
       message: "Node.js major version (for GitHub Actions)",
       initialValue: String(nodeVersionDefault),
-      validate: (value) => {
+      validate: (value = "") => {
         const major = Number.parseInt(value.trim(), 10);
         if (!Number.isFinite(major) || major <= 0) return "Enter a valid major version (e.g. 22)";
         return;
@@ -399,7 +399,7 @@ async function promptCommand(message: string, initialValue: string): Promise<str
   const value = await text({
     message,
     initialValue,
-    validate: (v) => (!v.trim() ? "Command is required" : undefined),
+    validate: (v = "") => (!v.trim() ? "Command is required" : undefined),
   });
   if (isCancel(value)) return abort();
   return String(value).trim();
