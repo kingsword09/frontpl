@@ -65,7 +65,7 @@ What it does:
 
 ## GitHub Actions (CI + Release)
 
-frontpl generates workflows that call reusable workflows from `kingsword09/workflows` (pinned to `@v1` by default):
+frontpl generates workflows that call reusable workflows from `kingsword09/workflows` (pinned to commit SHA + `# vX.Y.Z` comment by default):
 
 - CI: `cli-ci.yml`
 - Release (tag, recommended): `cli-release-tag.yml`

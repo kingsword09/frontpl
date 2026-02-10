@@ -74,9 +74,28 @@ void test("ci template can pin explicit run commands", () => {
     testCommand: "pnpm run test",
   });
 
+  assert.match(
+    workflow,
+    /uses: kingsword09\/workflows\/.github\/workflows\/cli-ci\.yml@7320d30bcd47cee17cc2d8d28250ba1ab1f742b8 # v1\.0\.3/,
+  );
   assert.match(workflow, /lintCommand: "pnpm run lint"/);
   assert.match(workflow, /formatCheckCommand: "pnpm run format:check"/);
   assert.match(workflow, /testCommand: "pnpm run test"/);
+});
+
+void test("ci template allows custom workflows ref and version", () => {
+  const workflow = githubCliCiWorkflowTemplate({
+    packageManager: "pnpm",
+    nodeVersion: 22,
+    workingDirectory: ".",
+    runLint: true,
+    runFormatCheck: false,
+    runTests: false,
+    workflowsRef: "deadbeef",
+    workflowsVersion: "v9.9.9",
+  });
+
+  assert.match(workflow, /cli-ci\.yml@deadbeef # v9\.9\.9/);
 });
 
 void test("dependabot template maps root directory and includes groups", () => {

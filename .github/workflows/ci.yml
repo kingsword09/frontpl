@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@v1.0.3
+    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@7320d30bcd47cee17cc2d8d28250ba1ab1f742b8 # v1.0.3
     with:
       packageManager: pnpm
       nodeVersion: 22
