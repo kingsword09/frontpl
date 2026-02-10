@@ -179,6 +179,20 @@ export function packageJsonTemplate(opts: {
   );
 }
 
+const DEFAULT_WORKFLOWS_REF = "7320d30bcd47cee17cc2d8d28250ba1ab1f742b8";
+const DEFAULT_WORKFLOWS_VERSION = "v1.0.3";
+
+function resolveWorkflowsPin(opts: { workflowsRef?: string; workflowsVersion?: string }) {
+  const ref = opts.workflowsRef?.trim() || DEFAULT_WORKFLOWS_REF;
+  const version =
+    opts.workflowsVersion?.trim() || (opts.workflowsRef ? undefined : DEFAULT_WORKFLOWS_VERSION);
+
+  return {
+    ref,
+    versionComment: version ? ` # ${version}` : "",
+  };
+}
+
 export function githubCliCiWorkflowTemplate(opts: {
   packageManager: "npm" | "pnpm" | "yarn" | "bun" | "deno";
   nodeVersion: number;
@@ -191,8 +205,9 @@ export function githubCliCiWorkflowTemplate(opts: {
   formatCheckCommand?: string;
   testCommand?: string;
   workflowsRef?: string;
+  workflowsVersion?: string;
 }) {
-  const ref = opts.workflowsRef ?? "v1";
+  const { ref, versionComment } = resolveWorkflowsPin(opts);
   const installCommand = opts.installCommand?.trim();
   const lintCommand = opts.lintCommand?.trim();
   const formatCheckCommand = opts.formatCheckCommand?.trim();
@@ -208,7 +223,7 @@ export function githubCliCiWorkflowTemplate(opts: {
     "",
     "jobs:",
     "  ci:",
-    `    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@${ref}`,
+    `    uses: kingsword09/workflows/.github/workflows/cli-ci.yml@${ref}${versionComment}`,
     "    with:",
     `      packageManager: ${opts.packageManager}`,
     `      nodeVersion: ${opts.nodeVersion}`,
@@ -230,8 +245,9 @@ export function githubCliReleaseWorkflowTemplate(opts: {
   workingDirectory: string;
   trustedPublishing?: boolean;
   workflowsRef?: string;
+  workflowsVersion?: string;
 }) {
-  const ref = opts.workflowsRef ?? "v1";
+  const { ref, versionComment } = resolveWorkflowsPin(opts);
   const trustedPublishing = opts.trustedPublishing;
   const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
   return [
@@ -246,7 +262,7 @@ export function githubCliReleaseWorkflowTemplate(opts: {
     "    permissions:",
     "      contents: write",
     "      id-token: write",
-    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}`,
+    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}${versionComment}`,
     "    with:",
     `      packageManager: ${opts.packageManager}`,
     `      nodeVersion: ${opts.nodeVersion}`,
@@ -263,8 +279,9 @@ export function githubCliReleaseTagWorkflowTemplate(opts: {
   workingDirectory: string;
   trustedPublishing?: boolean;
   workflowsRef?: string;
+  workflowsVersion?: string;
 }) {
-  const ref = opts.workflowsRef ?? "v1";
+  const { ref, versionComment } = resolveWorkflowsPin(opts);
   const trustedPublishing = opts.trustedPublishing;
   const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
   return [
@@ -279,7 +296,7 @@ export function githubCliReleaseTagWorkflowTemplate(opts: {
     "    permissions:",
     "      contents: write",
     "      id-token: write",
-    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}`,
+    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}${versionComment}`,
     "    with:",
     `      packageManager: ${opts.packageManager}`,
     `      nodeVersion: ${opts.nodeVersion}`,
@@ -296,8 +313,9 @@ export function githubCliReleaseBothWorkflowTemplate(opts: {
   workingDirectory: string;
   trustedPublishing?: boolean;
   workflowsRef?: string;
+  workflowsVersion?: string;
 }) {
-  const ref = opts.workflowsRef ?? "v1";
+  const { ref, versionComment } = resolveWorkflowsPin(opts);
   const trustedPublishing = opts.trustedPublishing;
   const needsNpmToken = opts.packageManager !== "deno" && trustedPublishing === false;
   return [
@@ -314,7 +332,7 @@ export function githubCliReleaseBothWorkflowTemplate(opts: {
     "    permissions:",
     "      contents: write",
     "      id-token: write",
-    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}`,
+    `    uses: kingsword09/workflows/.github/workflows/cli-release-tag.yml@${ref}${versionComment}`,
     "    with:",
     `      packageManager: ${opts.packageManager}`,
     `      nodeVersion: ${opts.nodeVersion}`,
@@ -327,7 +345,7 @@ export function githubCliReleaseBothWorkflowTemplate(opts: {
     "    permissions:",
     "      contents: write",
     "      id-token: write",
-    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}`,
+    `    uses: kingsword09/workflows/.github/workflows/cli-release.yml@${ref}${versionComment}`,
     "    with:",
     `      packageManager: ${opts.packageManager}`,
     `      nodeVersion: ${opts.nodeVersion}`,
