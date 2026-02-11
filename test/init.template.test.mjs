@@ -25,7 +25,7 @@ void test("package template adds kingsword lint dependency", () => {
     useOxlint: true,
     oxlintVersion: "latest",
     oxlintTsgolintVersion: "latest",
-    kingswordLintConfigVersion: "^0.1.1",
+    kingswordLintConfigVersion: "latest",
     useOxfmt: false,
     useVitest: true,
     vitestVersion: "latest",
@@ -38,7 +38,7 @@ void test("package template adds kingsword lint dependency", () => {
   assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
   assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
   assert.equal(pkg.devDependencies.oxlint, "latest");
-  assert.equal(pkg.devDependencies["@kingsword/lint-config"], "^0.1.1");
+  assert.equal(pkg.devDependencies["@kingsword/lint-config"], "latest");
   assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
 });
 

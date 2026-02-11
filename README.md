@@ -30,6 +30,7 @@ Follow the prompts to choose:
 - Optional tooling: `oxlint`, `oxfmt`, `vitest`, `tsdown`
 
 When `oxlint` is enabled, generated projects use `@kingsword/lint-config` via `oxlint.config.ts`.
+Generated lint-related dependencies (`oxlint`, `oxlint-tsgolint`, `oxfmt`, `@kingsword/lint-config`) default to `latest` in scaffolded `package.json`.
 
 - Git init
 - GitHub Actions workflows:

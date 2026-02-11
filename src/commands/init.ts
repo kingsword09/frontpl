@@ -204,7 +204,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         useOxlint,
         oxlintVersion: "latest",
         oxlintTsgolintVersion: "latest",
-        kingswordLintConfigVersion: "^0.1.1",
+        kingswordLintConfigVersion: "latest",
         useOxfmt,
         oxfmtVersion: "latest",
         useVitest,
