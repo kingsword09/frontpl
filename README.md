@@ -82,10 +82,11 @@ What it does:
   - `oxlint-tsgolint`
   - `@kingsword/lint-config`
 - Creates or updates `oxlint.config.ts` using `@kingsword/lint-config`
-- In replace mode, optionally removes ESLint deps/configs (`eslint*`, `@eslint/*`, `@typescript-eslint/*`, `eslintConfig`, `.eslintrc*`, `eslint.config.*`)
+- In replace mode, removes ESLint deps/configs (`eslint*`, `@eslint/*`, `@typescript-eslint/*`, `eslintConfig`, `.eslintrc*`, `eslint.config.*`)
 - Optionally installs dependencies with detected package manager
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
+With `--yes`, strategy defaults to `replace`.
 
 ### `frontpl oxfmt`
 
@@ -107,6 +108,7 @@ What it does:
 - Optionally installs dependencies with detected package manager
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
+With `--yes`, config strategy defaults to rebuild `.oxfmtrc.json`.
 
 ## GitHub Actions (CI + Release)
 
@@ -144,6 +146,8 @@ pnpm run lint
 pnpm run build
 node dist/cli.mjs --help
 node dist/cli.mjs ci
+node dist/cli.mjs oxlint --help
+node dist/cli.mjs oxfmt --help
 ```
 
 ## Lint preset
