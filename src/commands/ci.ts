@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 
 import { writeText } from "../lib/fs.js";
+import { detectPackageManager, readPackageJson as readProjectPackageJson } from "../lib/project.js";
 import {
   githubCliCiWorkflowTemplate,
   githubCliReleaseBothWorkflowTemplate,
@@ -15,12 +16,6 @@ import { pathExists } from "../lib/utils.js";
 
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 type GithubReleaseMode = "tag" | "commit" | "both";
-
-type PackageJson = {
-  packageManager?: string;
-  scripts?: Record<string, string>;
-  engines?: { node?: string };
-};
 
 export async function runCi() {
   try {
@@ -217,34 +212,6 @@ async function confirmOverwriteIfExists(absPath: string, label: string) {
   return overwrite;
 }
 
-function isPackageManager(value: string): value is PackageManager {
-  return (
-    value === "npm" || value === "pnpm" || value === "yarn" || value === "bun" || value === "deno"
-  );
-}
-
-async function detectPackageManager(rootDir: string): Promise<PackageManager | undefined> {
-  const pkg = await readPackageJson(path.join(rootDir, "package.json"));
-  const pmField = pkg?.packageManager;
-  if (pmField) {
-    const pm = pmField.split("@")[0] ?? "";
-    if (isPackageManager(pm)) return pm;
-  }
-
-  const candidates: PackageManager[] = [];
-  if (await pathExists(path.join(rootDir, "pnpm-lock.yaml"))) candidates.push("pnpm");
-  if (await pathExists(path.join(rootDir, "yarn.lock"))) candidates.push("yarn");
-  if (await pathExists(path.join(rootDir, "package-lock.json"))) candidates.push("npm");
-  if (await pathExists(path.join(rootDir, "bun.lockb"))) candidates.push("bun");
-  if (
-    (await pathExists(path.join(rootDir, "deno.json"))) ||
-    (await pathExists(path.join(rootDir, "deno.jsonc")))
-  )
-    candidates.push("deno");
-
-  return candidates.length === 1 ? candidates[0] : undefined;
-}
-
 async function listPackageCandidates(
   rootDir: string,
   packageManager: PackageManager,
@@ -278,7 +245,7 @@ async function listPackageCandidates(
 
 async function detectWorkingDirectory(rootDir: string, candidates: string[]): Promise<string> {
   if (candidates.length === 1) return candidates[0]!;
-  const rootPkg = await readPackageJson(path.join(rootDir, "package.json"));
+  const rootPkg = await readProjectPackageJson(path.join(rootDir, "package.json"));
   const rootScripts = rootPkg?.scripts ?? {};
   const rootHasScripts = Object.keys(rootScripts).length > 0;
 
@@ -297,7 +264,7 @@ async function detectNodeMajorVersion(rootDir: string): Promise<number | undefin
     if (major) return major;
   }
 
-  const pkg = await readPackageJson(path.join(rootDir, "package.json"));
+  const pkg = await readProjectPackageJson(path.join(rootDir, "package.json"));
   const engine = pkg?.engines?.node;
   if (!engine) return;
   const match = engine.match(/([0-9]{2,})/);
@@ -328,7 +295,7 @@ async function resolveCiCommands(
     return { runLint: true, runFormatCheck: true, runTests: true };
   }
 
-  const pkg = await readPackageJson(path.join(rootDir, workingDirectory, "package.json"));
+  const pkg = await readProjectPackageJson(path.join(rootDir, workingDirectory, "package.json"));
   if (!pkg) {
     return abort({ message: `Missing package.json in ${workingDirectory}`, exitCode: 1 });
   }
@@ -417,13 +384,5 @@ function pmRun(pm: PackageManager, script: string) {
       return `bun run ${script}`;
     case "deno":
       return script;
-  }
-}
-
-async function readPackageJson(filePath: string): Promise<PackageJson | undefined> {
-  try {
-    return JSON.parse(await readFile(filePath, "utf8")) as PackageJson;
-  } catch {
-    return undefined;
   }
 }

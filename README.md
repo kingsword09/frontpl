@@ -64,6 +64,27 @@ What it does:
 - Optionally generates `.github/workflows/release.yml` (tag/commit/both)
 - Optionally generates `.github/dependabot.yml` with grouped updates (`dependencies`, `github-actions`)
 
+### `frontpl oxfmt`
+
+Add/migrate formatting in the current project to `oxfmt`.
+
+What it does:
+
+- Asks config strategy interactively:
+  - Migrate from Prettier (`oxfmt --migrate=prettier`)
+  - Rebuild `.oxfmtrc.json` (current mode)
+- Ensures `package.json` scripts use:
+  - `format`: `oxfmt`
+  - `format:check`: `oxfmt --check`
+  - `fmt`: `oxfmt`
+  - `fmt:check`: `oxfmt --check`
+- Ensures `devDependencies.oxfmt` exists (defaults to `latest` when missing)
+- Creates or updates `.oxfmtrc.json`
+- Optionally removes `prettier` / `prettier-plugin-*` / `@prettier/plugin-*` dependencies, `package.json#prettier`, and Prettier config files (`.prettierrc*`, `prettier.config.*`)
+- Optionally installs dependencies with detected package manager
+
+Use `--yes` (or `-y`) to skip confirmations and apply default choices.
+
 ## GitHub Actions (CI + Release)
 
 frontpl generates workflows that call reusable workflows from `kingsword09/workflows` (pinned to commit SHA + `# vX.Y.Z` comment by default):
