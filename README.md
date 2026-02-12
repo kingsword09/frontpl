@@ -48,6 +48,7 @@ Generated output includes (based on options):
 - `.editorconfig`, `.gitignore`, `.gitattributes`
 - `package.json` (+ scripts like optional `lint`, `format:check`, `test`, `build`)
 - `tsconfig.json`, `src/index.ts`
+- Relative TypeScript imports use explicit `.ts` extensions (e.g. generated `src/index.test.ts`)
 - Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
 - Optional GitHub Actions workflows in `.github/workflows/`
 

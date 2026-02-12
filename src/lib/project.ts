@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { writeText } from "./fs.js";
-import { pathExists } from "./utils.js";
+import { writeText } from "./fs.ts";
+import { pathExists } from "./utils.ts";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 
