@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import bin from "tiny-bin";
-import { runCi } from "./commands/ci.js";
-import { runInit } from "./commands/init.js";
-import { runOxlint } from "./commands/oxlint.js";
-import { runOxfmt } from "./commands/oxfmt.js";
+import { runCi } from "./commands/ci.ts";
+import { runInit } from "./commands/init.ts";
+import { runOxlint } from "./commands/oxlint.ts";
+import { runOxfmt } from "./commands/oxfmt.ts";
 
 async function main() {
   await bin("frontpl", "Scaffold standardized frontend templates")

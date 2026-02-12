@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readdir, readFile } from "node:fs/promises";
 
 import {
   githubDependabotTemplate,
@@ -127,4 +128,18 @@ void test("dependabot template keeps github-actions updates for deno", () => {
 
   assert.doesNotMatch(config, /package-ecosystem: "npm"/);
   assert.match(config, /package-ecosystem: "github-actions"/);
+});
+
+void test("vitest scaffold template uses .ts import extension", async () => {
+  const distDir = new URL("../dist/", import.meta.url);
+  const distFiles = await readdir(distDir);
+  const moduleFiles = distFiles.filter((file) => file.endsWith(".mjs"));
+
+  const moduleTexts = await Promise.all(
+    moduleFiles.map(async (file) => readFile(new URL(file, distDir), "utf8")),
+  );
+  const bundleText = moduleTexts.join("\n");
+
+  assert.match(bundleText, /\.\/index\.ts/);
+  assert.doesNotMatch(bundleText, /\.\/index\.js/);
 });

@@ -55,7 +55,7 @@ export function srcIndexTemplate() {
 export function srcVitestTemplate() {
   return [
     'import { describe, expect, it } from "vitest";',
-    'import { hello } from "./index.js";',
+    'import { hello } from "./index.ts";',
     "",
     'describe("hello", () => {',
     '  it("greets", () => {',

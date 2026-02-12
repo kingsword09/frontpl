@@ -3,9 +3,9 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { exec } from "../lib/exec.js";
-import { writeText } from "../lib/fs.js";
-import { detectPackageManagerVersion } from "../lib/versions.js";
+import { exec } from "../lib/exec.ts";
+import { writeText } from "../lib/fs.ts";
+import { detectPackageManagerVersion } from "../lib/versions.ts";
 import {
   editorconfigTemplate,
   gitattributesTemplate,
@@ -23,8 +23,8 @@ import {
   srcVitestTemplate,
   tsconfigTemplate,
   tsdownConfigTemplate,
-} from "../lib/templates.js";
-import { pathExists } from "../lib/utils.js";
+} from "../lib/templates.ts";
+import { pathExists } from "../lib/utils.ts";
 
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 type GithubActionsPreset = "none" | "ci" | "ci+release";

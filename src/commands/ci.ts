@@ -3,16 +3,16 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { writeText } from "../lib/fs.js";
-import { detectPackageManager, readPackageJson as readProjectPackageJson } from "../lib/project.js";
+import { writeText } from "../lib/fs.ts";
+import { detectPackageManager, readPackageJson as readProjectPackageJson } from "../lib/project.ts";
 import {
   githubCliCiWorkflowTemplate,
   githubCliReleaseBothWorkflowTemplate,
   githubCliReleaseTagWorkflowTemplate,
   githubCliReleaseWorkflowTemplate,
   githubDependabotTemplate,
-} from "../lib/templates.js";
-import { pathExists } from "../lib/utils.js";
+} from "../lib/templates.ts";
+import { pathExists } from "../lib/utils.ts";
 
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 type GithubReleaseMode = "tag" | "commit" | "both";

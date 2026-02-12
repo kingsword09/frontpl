@@ -3,17 +3,17 @@ import { unlink } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-import { exec } from "../lib/exec.js";
-import { writeText } from "../lib/fs.js";
+import { exec } from "../lib/exec.ts";
+import { writeText } from "../lib/fs.ts";
 import {
   type PackageJson,
   type PackageManager,
   detectPackageManager,
   readPackageJson,
   writePackageJson,
-} from "../lib/project.js";
-import { oxfmtConfigTemplate } from "../lib/templates.js";
-import { pathExists } from "../lib/utils.js";
+} from "../lib/project.ts";
+import { oxfmtConfigTemplate } from "../lib/templates.ts";
+import { pathExists } from "../lib/utils.ts";
 
 const OXFMT_SCRIPTS = {
   format: "oxfmt",
