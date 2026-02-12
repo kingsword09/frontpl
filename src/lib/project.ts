@@ -10,6 +10,7 @@ export type PackageJson = {
   name?: string;
   packageManager?: string;
   prettier?: unknown;
+  eslintConfig?: unknown;
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;

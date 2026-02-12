@@ -64,6 +64,29 @@ What it does:
 - Optionally generates `.github/workflows/release.yml` (tag/commit/both)
 - Optionally generates `.github/dependabot.yml` with grouped updates (`dependencies`, `github-actions`)
 
+### `frontpl oxlint`
+
+Add/migrate linting in the current project to `oxlint`.
+
+What it does:
+
+- Asks strategy interactively:
+  - Migrate gradually (keep existing ESLint assets)
+  - Replace ESLint directly (current mode)
+- Ensures `package.json` scripts use:
+  - `lint`: `oxlint --type-aware --type-check`
+  - `lint:fix`: `oxlint --type-aware --type-check --fix`
+- Removes `typecheck: tsc --noEmit` when confirmed (or by default with `--yes`)
+- Ensures devDependencies exist:
+  - `oxlint`
+  - `oxlint-tsgolint`
+  - `@kingsword/lint-config`
+- Creates or updates `oxlint.config.ts` using `@kingsword/lint-config`
+- In replace mode, optionally removes ESLint deps/configs (`eslint*`, `@eslint/*`, `@typescript-eslint/*`, `eslintConfig`, `.eslintrc*`, `eslint.config.*`)
+- Optionally installs dependencies with detected package manager
+
+Use `--yes` (or `-y`) to skip confirmations and apply default choices.
+
 ### `frontpl oxfmt`
 
 Add/migrate formatting in the current project to `oxfmt`.

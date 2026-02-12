@@ -2,6 +2,7 @@
 import bin from "tiny-bin";
 import { runCi } from "./commands/ci.js";
 import { runInit } from "./commands/init.js";
+import { runOxlint } from "./commands/oxlint.js";
 import { runOxfmt } from "./commands/oxfmt.js";
 
 async function main() {
@@ -18,6 +19,11 @@ async function main() {
     .command("ci", "Add CI/release workflows to an existing project")
     .action(async () => {
       await runCi();
+    })
+    .command("oxlint", "Add/migrate linter to oxlint in current project")
+    .option("--yes, -y", "Skip confirmations and use defaults")
+    .action(async (options) => {
+      await runOxlint({ yes: options.yes === true });
     })
     .command("oxfmt", "Add/migrate formatter to oxfmt in current project")
     .option("--yes, -y", "Skip confirmations and use defaults")
