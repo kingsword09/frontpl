@@ -84,7 +84,14 @@ export function oxfmtConfigTemplate() {
   return (
     JSON.stringify(
       {
-        $schema: "https://json.schemastore.org/oxfmtrc.json",
+        $schema: "./node_modules/oxfmt/configuration_schema.json",
+        useTabs: false,
+        indentWidth: 2,
+        lineWidth: 100,
+        trailingComma: "all",
+        semi: true,
+        singleQuote: false,
+        arrowParens: "always",
       },
       null,
       2,

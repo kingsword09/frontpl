@@ -77,7 +77,17 @@ void test("oxfmt command migrates scripts and removes prettier assets", async ()
     assert.equal(pkg.prettier, undefined);
     assert.equal(pkg.dependencies?.["prettier-plugin-tailwindcss"], undefined);
 
-    await stat(path.join(dir, ".oxfmtrc.json"));
+    const oxfmtConfig = JSON.parse(await readFile(path.join(dir, ".oxfmtrc.json"), "utf8"));
+    assert.deepEqual(oxfmtConfig, {
+      $schema: "./node_modules/oxfmt/configuration_schema.json",
+      useTabs: false,
+      indentWidth: 2,
+      lineWidth: 100,
+      trailingComma: "all",
+      semi: true,
+      singleQuote: false,
+      arrowParens: "always",
+    });
     await assert.rejects(stat(path.join(dir, ".prettierrc")));
     await assert.rejects(stat(path.join(dir, ".prettierrc.toml")));
     await assert.rejects(stat(path.join(dir, "prettier.config.cjs")));
