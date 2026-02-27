@@ -177,6 +177,10 @@ What it does:
   - `format:check`: `oxfmt --check`
 - Ensures `devDependencies.oxfmt` exists (defaults to `latest` when missing)
 - Creates or updates `.oxfmtrc.json`
+- Rebuild mode writes baseline formatter options:
+  - `$schema: "./node_modules/oxfmt/configuration_schema.json"`
+  - `useTabs: false`, `indentWidth: 2`, `lineWidth: 100`
+  - `trailingComma: "all"`, `semi: true`, `singleQuote: false`, `arrowParens: "always"`
 - Optionally removes `prettier` / `prettier-plugin-*` / `@prettier/plugin-*` dependencies, `package.json#prettier`, and Prettier config files (`.prettierrc*`, `prettier.config.*`)
 - Optionally installs dependencies with detected package manager
 
