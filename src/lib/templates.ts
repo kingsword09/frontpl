@@ -34,6 +34,7 @@ export function tsconfigTemplate() {
           target: "ES2022",
           module: "ESNext",
           moduleResolution: "Bundler",
+          allowImportingTsExtensions: true,
           strict: true,
           skipLibCheck: true,
           noEmit: true,
@@ -239,12 +240,14 @@ export function workspaceRootPackageJsonTemplate(opts: {
   const manifest: {
     name: string;
     private: boolean;
+    type: string;
     packageManager: string;
     scripts?: Record<string, string>;
     devDependencies?: Record<string, string>;
   } = {
     name: opts.name,
     private: true,
+    type: "module",
     packageManager: opts.packageManager,
   };
 
