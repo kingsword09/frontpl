@@ -109,6 +109,7 @@ void test("workspace root package template hosts lint/format toolchain", () => {
   const pkg = JSON.parse(pkgText);
 
   assert.equal(pkg.private, true);
+  assert.equal(pkg.type, "module");
   assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
   assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
   assert.equal(pkg.scripts.format, "oxfmt");
@@ -231,5 +232,6 @@ void test("vitest scaffold template uses .ts import extension", async () => {
   const bundleText = moduleTexts.join("\n");
 
   assert.match(bundleText, /\.\/index\.ts/);
+  assert.match(bundleText, /allowImportingTsExtensions/);
   assert.doesNotMatch(bundleText, /\.\/index\.js/);
 });

@@ -50,6 +50,7 @@ Generated output includes (based on options):
 - `.editorconfig`, `.gitignore`, `.gitattributes`
 - `package.json` (+ scripts like optional `lint`, `format:check`, `test`, `build`)
 - `tsconfig.json`, `src/index.ts`
+- Generated `tsconfig.json` enables `allowImportingTsExtensions` for `.ts` import paths
 - Relative TypeScript imports use explicit `.ts` extensions (e.g. generated `src/index.test.ts`)
 - Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
 - Optional GitHub Actions workflows in `.github/workflows/`
@@ -57,6 +58,7 @@ Generated output includes (based on options):
 When `pnpm workspace mode` is enabled:
 
 - Root contains `pnpm-workspace.yaml` and the workspace `package.json`
+- Workspace root `package.json` includes `"type": "module"`
 - `oxlint`/`oxfmt` scripts, dependencies, and config files are generated at the workspace root
 - App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, and `tsconfig.json`
 - If root `oxlint` is enabled, package `package.json` does not add redundant `typecheck: tsc --noEmit`
