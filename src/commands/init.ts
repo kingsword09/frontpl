@@ -309,14 +309,13 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   outro(`Done. Next:\n  cd ${projectName}${installHint}\n  ${nextStepHint(packageManager)}`);
 }
 
-function validateProjectName(value: string | undefined) {
+export function validateProjectName(value: string | undefined) {
   const name = (value ?? "").trim();
   if (!name) return "Project name is required";
   if (name.length > 214) return "Project name is too long";
   if (name.startsWith(".")) return "Project name cannot start with '.'";
   if (name.startsWith("_")) return "Project name cannot start with '_'";
-  if (/[A-Z]/.test(name)) return "Use lowercase letters only";
-  if (!/^[a-z0-9._-]+$/.test(name)) return "Use letters, numbers, '.', '_' or '-'";
+  if (!/^[A-Za-z0-9._-]+$/.test(name)) return "Use letters, numbers, '.', '_' or '-'";
   return;
 }
 
