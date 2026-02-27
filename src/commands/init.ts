@@ -162,6 +162,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   const toolingDir = pnpmWorkspace ? rootDir : pkgDir;
   const packageUseOxlint = pnpmWorkspace ? false : useOxlint;
   const packageUseOxfmt = pnpmWorkspace ? false : useOxfmt;
+  const packageIncludeTypecheckWithoutOxlint = !(pnpmWorkspace && useOxlint);
 
   const pmVersion = await detectPackageManagerVersion(packageManager);
   const packageManagerField = pmVersion
@@ -209,6 +210,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         packageManager: packageManagerField,
         typescriptVersion: "latest",
         useOxlint: packageUseOxlint,
+        includeTypecheckWithoutOxlint: packageIncludeTypecheckWithoutOxlint,
         oxlintVersion: "latest",
         oxlintTsgolintVersion: "latest",
         kingswordLintConfigVersion: "latest",

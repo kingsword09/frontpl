@@ -151,6 +151,7 @@ export function packageJsonTemplate(opts: {
   packageManager: string;
   typescriptVersion: string;
   useOxlint: boolean;
+  includeTypecheckWithoutOxlint?: boolean;
   oxlintVersion?: string;
   oxlintTsgolintVersion?: string;
   kingswordLintConfigVersion?: string;
@@ -163,7 +164,7 @@ export function packageJsonTemplate(opts: {
 }) {
   const scripts: Record<string, string> = {};
 
-  if (!opts.useOxlint) {
+  if (!opts.useOxlint && opts.includeTypecheckWithoutOxlint !== false) {
     scripts.typecheck = "tsc --noEmit";
   }
 
