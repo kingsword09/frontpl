@@ -1,6 +1,6 @@
 {
   "name": "frontpl",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Interactive CLI to scaffold standardized frontend project templates.",
   "keywords": [
     "cli",
