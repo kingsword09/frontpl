@@ -59,6 +59,7 @@ When `pnpm workspace mode` is enabled:
 - Root contains `pnpm-workspace.yaml` and the workspace `package.json`
 - `oxlint`/`oxfmt` scripts, dependencies, and config files are generated at the workspace root
 - App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, and `tsconfig.json`
+- If root `oxlint` is enabled, package `package.json` does not add redundant `typecheck: tsc --noEmit`
 
 ### `frontpl ci`
 

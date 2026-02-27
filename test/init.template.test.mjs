@@ -129,6 +129,7 @@ void test("workspace package template omits oxlint/oxfmt when managed at root", 
     packageManager: "pnpm@10.28.1",
     typescriptVersion: "latest",
     useOxlint: false,
+    includeTypecheckWithoutOxlint: false,
     useOxfmt: false,
     useVitest: true,
     vitestVersion: "latest",
@@ -141,7 +142,7 @@ void test("workspace package template omits oxlint/oxfmt when managed at root", 
   assert.equal(pkg.scripts.lint, undefined);
   assert.equal(pkg.scripts.format, undefined);
   assert.equal(pkg.scripts.fmt, undefined);
-  assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
+  assert.equal(pkg.scripts.typecheck, undefined);
   assert.equal(pkg.scripts.test, "vitest");
   assert.equal(pkg.scripts.build, "tsdown");
   assert.equal(pkg.devDependencies.oxlint, undefined);
