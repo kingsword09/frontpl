@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import bin from "tiny-bin";
 import { runAdd } from "./commands/add.ts";
+import { runBump } from "./commands/bump.ts";
 import { runCi } from "./commands/ci.ts";
 import { runInit } from "./commands/init.ts";
 import { runOxlint } from "./commands/oxlint.ts";
@@ -37,6 +38,12 @@ async function main() {
     .option("--yes, -y", "Skip confirmations and use defaults")
     .action(async (options) => {
       await runOxfmt({ yes: options.yes === true });
+    })
+    .command("bump", "Bump package.json version")
+    .argument("[target]", "patch | minor | major | <version>")
+    .option("--dry-run", "Show the next version without writing package.json")
+    .action(async (options, args) => {
+      await runBump({ targetArg: args[0], dryRun: options.dryRun === true });
     })
     .command("pkg", "Normalize package.json for npm publishing using GitHub remote")
     .option("--yes, -y", "Skip confirmations and use defaults")

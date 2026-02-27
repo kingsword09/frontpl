@@ -106,6 +106,26 @@ What it does:
 
 Use `--yes` (or `-y`) to skip confirmation.
 
+### `frontpl bump [target]`
+
+Update current `package.json#version` without opening an editor.
+
+Interactive mode (`frontpl bump`):
+
+- Shows concrete candidate versions for `patch` / `minor` / `major`
+  - e.g. current `1.2.3` -> `1.2.4` / `1.3.0` / `2.0.0`
+- `custom`: set explicit version text
+
+Direct mode (`frontpl bump <target>`):
+
+- `frontpl bump patch`
+- `frontpl bump minor`
+- `frontpl bump major`
+- `frontpl bump 1.8.0`
+
+When using `minor`/`major`, trailing segments are reset to `0`.
+Use `--dry-run` to preview from/to version without writing `package.json`.
+
 ### `frontpl ci`
 
 Add or update CI/Release workflows for an existing project (run it in your repo root).
