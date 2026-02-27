@@ -8,6 +8,18 @@ export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "deno";
 
 export type PackageJson = {
   name?: string;
+  version?: string;
+  private?: boolean;
+  type?: string;
+  main?: string;
+  types?: string;
+  files?: string[];
+  homepage?: string;
+  license?: string;
+  exports?: string | Record<string, unknown>;
+  repository?: string | { type?: string; url?: string; directory?: string };
+  bugs?: string | { url?: string };
+  publishConfig?: { access?: string } & Record<string, unknown>;
   packageManager?: string;
   prettier?: unknown;
   eslintConfig?: unknown;
