@@ -1,3 +1,4 @@
+export { runAdd } from "./commands/add.ts";
 export { runCi } from "./commands/ci.ts";
 export { runInit, validateProjectName } from "./commands/init.ts";
 export { runOxlint } from "./commands/oxlint.ts";

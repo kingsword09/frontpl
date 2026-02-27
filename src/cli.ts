@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import bin from "tiny-bin";
+import { runAdd } from "./commands/add.ts";
 import { runCi } from "./commands/ci.ts";
 import { runInit } from "./commands/init.ts";
 import { runOxlint } from "./commands/oxlint.ts";
@@ -19,6 +20,12 @@ async function main() {
     .command("ci", "Add CI/release workflows to an existing project")
     .action(async () => {
       await runCi();
+    })
+    .command("add", "Add a new package to an existing pnpm workspace")
+    .argument("[name]", "Package name (directory name under packages/)")
+    .option("--yes, -y", "Skip confirmations and use defaults")
+    .action(async (options, args) => {
+      await runAdd({ nameArg: args[0], yes: options.yes === true });
     })
     .command("oxlint", "Add/migrate linter to oxlint in current project")
     .option("--yes, -y", "Skip confirmations and use defaults")

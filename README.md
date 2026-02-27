@@ -61,6 +61,25 @@ When `pnpm workspace mode` is enabled:
 - App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, and `tsconfig.json`
 - If root `oxlint` is enabled, package `package.json` does not add redundant `typecheck: tsc --noEmit`
 
+### `frontpl add [name]`
+
+Add a new package under `packages/<name>/` in an existing `pnpm workspace`.
+
+What it does:
+
+- Requires workspace root (`pnpm-workspace.yaml`) and `pnpm` package manager
+- Generates package baseline files:
+  - `packages/<name>/package.json`
+  - `packages/<name>/README.md`
+  - `packages/<name>/src/index.ts`
+  - `packages/<name>/tsconfig.json`
+- Optionally adds `vitest` (`src/index.test.ts`) and `tsdown` (`tsdown.config.ts`)
+- Reuses root toolchain strategy:
+  - package does not scaffold `oxlint`/`oxfmt` scripts
+  - if root `oxlint` exists, package does not scaffold `typecheck: tsc --noEmit`
+
+Use `--yes` (or `-y`) to skip confirmations and use defaults inferred from root scripts.
+
 ### `frontpl ci`
 
 Add or update CI/Release workflows for an existing project (run it in your repo root).
