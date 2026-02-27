@@ -7,6 +7,7 @@ import {
   oxlintConfigTemplate,
   packageJsonTemplate,
   validateProjectName,
+  workspaceRootPackageJsonTemplate,
 } from "../dist/index.mjs";
 import { githubCliCiWorkflowTemplate } from "../dist/index.mjs";
 
@@ -89,6 +90,62 @@ void test("package template preserves camel case project names", () => {
 
   const pkg = JSON.parse(pkgText);
   assert.equal(pkg.name, "TalentPrism");
+});
+
+void test("workspace root package template hosts lint/format toolchain", () => {
+  const pkgText = workspaceRootPackageJsonTemplate({
+    name: "TalentPrism",
+    packageManager: "pnpm@10.28.1",
+    useOxlint: true,
+    oxlintVersion: "latest",
+    oxlintTsgolintVersion: "latest",
+    kingswordLintConfigVersion: "latest",
+    useOxfmt: true,
+    oxfmtVersion: "latest",
+    useVitest: true,
+    useTsdown: true,
+  });
+
+  const pkg = JSON.parse(pkgText);
+
+  assert.equal(pkg.private, true);
+  assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
+  assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
+  assert.equal(pkg.scripts.format, "oxfmt");
+  assert.equal(pkg.scripts["format:check"], "oxfmt --check");
+  assert.equal(pkg.scripts.test, "pnpm -r --if-present run test");
+  assert.equal(pkg.scripts.build, "pnpm -r --if-present run build");
+  assert.equal(pkg.devDependencies.oxlint, "latest");
+  assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
+  assert.equal(pkg.devDependencies["@kingsword/lint-config"], "latest");
+  assert.equal(pkg.devDependencies.oxfmt, "latest");
+});
+
+void test("workspace package template omits oxlint/oxfmt when managed at root", () => {
+  const pkgText = packageJsonTemplate({
+    name: "TalentPrism",
+    packageManager: "pnpm@10.28.1",
+    typescriptVersion: "latest",
+    useOxlint: false,
+    useOxfmt: false,
+    useVitest: true,
+    vitestVersion: "latest",
+    useTsdown: true,
+    tsdownVersion: "latest",
+  });
+
+  const pkg = JSON.parse(pkgText);
+
+  assert.equal(pkg.scripts.lint, undefined);
+  assert.equal(pkg.scripts.format, undefined);
+  assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
+  assert.equal(pkg.scripts.test, "vitest");
+  assert.equal(pkg.scripts.build, "tsdown");
+  assert.equal(pkg.devDependencies.oxlint, undefined);
+  assert.equal(pkg.devDependencies.oxfmt, undefined);
+  assert.equal(pkg.devDependencies.typescript, "latest");
+  assert.equal(pkg.devDependencies.vitest, "latest");
+  assert.equal(pkg.devDependencies.tsdown, "latest");
 });
 
 void test("ci template can pin explicit run commands", () => {

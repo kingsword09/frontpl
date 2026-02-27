@@ -104,6 +104,50 @@ export function tsdownConfigTemplate() {
   ].join("\n");
 }
 
+type LintAndFormatTemplateOptions = {
+  useOxlint: boolean;
+  oxlintVersion?: string;
+  oxlintTsgolintVersion?: string;
+  kingswordLintConfigVersion?: string;
+  useOxfmt: boolean;
+  oxfmtVersion?: string;
+};
+
+function applyLintAndFormatScripts(
+  scripts: Record<string, string>,
+  opts: Pick<LintAndFormatTemplateOptions, "useOxlint" | "useOxfmt">,
+) {
+  if (opts.useOxlint) {
+    const oxlintCmd = "oxlint --type-aware --type-check";
+    scripts.lint = oxlintCmd;
+    scripts["lint:fix"] = `${oxlintCmd} --fix`;
+  }
+
+  if (opts.useOxfmt) {
+    scripts.format = "oxfmt";
+    scripts["format:check"] = "oxfmt --check";
+    scripts.fmt = "oxfmt";
+    scripts["fmt:check"] = "oxfmt --check";
+  }
+}
+
+function applyLintAndFormatDependencies(
+  devDependencies: Record<string, string>,
+  opts: LintAndFormatTemplateOptions,
+) {
+  if (opts.useOxlint) {
+    if (opts.oxlintVersion) devDependencies.oxlint = opts.oxlintVersion;
+    if (opts.oxlintTsgolintVersion) {
+      devDependencies["oxlint-tsgolint"] = opts.oxlintTsgolintVersion;
+    }
+    if (opts.kingswordLintConfigVersion) {
+      devDependencies["@kingsword/lint-config"] = opts.kingswordLintConfigVersion;
+    }
+  }
+
+  if (opts.useOxfmt && opts.oxfmtVersion) devDependencies.oxfmt = opts.oxfmtVersion;
+}
+
 export function packageJsonTemplate(opts: {
   name: string;
   packageManager: string;
@@ -121,20 +165,11 @@ export function packageJsonTemplate(opts: {
 }) {
   const scripts: Record<string, string> = {};
 
-  if (opts.useOxlint) {
-    const oxlintCmd = "oxlint --type-aware --type-check";
-    scripts.lint = oxlintCmd;
-    scripts["lint:fix"] = `${oxlintCmd} --fix`;
-  } else {
+  if (!opts.useOxlint) {
     scripts.typecheck = "tsc --noEmit";
   }
 
-  if (opts.useOxfmt) {
-    scripts.format = "oxfmt";
-    scripts["format:check"] = "oxfmt --check";
-    scripts.fmt = "oxfmt";
-    scripts["fmt:check"] = "oxfmt --check";
-  }
+  applyLintAndFormatScripts(scripts, opts);
 
   if (opts.useVitest) {
     scripts.test = "vitest";
@@ -148,17 +183,7 @@ export function packageJsonTemplate(opts: {
     typescript: opts.typescriptVersion,
   };
 
-  if (opts.useOxlint) {
-    if (opts.oxlintVersion) devDependencies.oxlint = opts.oxlintVersion;
-    if (opts.oxlintTsgolintVersion) {
-      devDependencies["oxlint-tsgolint"] = opts.oxlintTsgolintVersion;
-    }
-    if (opts.kingswordLintConfigVersion) {
-      devDependencies["@kingsword/lint-config"] = opts.kingswordLintConfigVersion;
-    }
-  }
-
-  if (opts.useOxfmt && opts.oxfmtVersion) devDependencies.oxfmt = opts.oxfmtVersion;
+  applyLintAndFormatDependencies(devDependencies, opts);
   if (opts.useVitest && opts.vitestVersion) devDependencies.vitest = opts.vitestVersion;
   if (opts.useTsdown && opts.tsdownVersion) devDependencies.tsdown = opts.tsdownVersion;
 
@@ -177,6 +202,55 @@ export function packageJsonTemplate(opts: {
       2,
     ) + "\n"
   );
+}
+
+export function workspaceRootPackageJsonTemplate(opts: {
+  name: string;
+  packageManager: string;
+  useOxlint: boolean;
+  oxlintVersion?: string;
+  oxlintTsgolintVersion?: string;
+  kingswordLintConfigVersion?: string;
+  useOxfmt: boolean;
+  oxfmtVersion?: string;
+  useVitest: boolean;
+  useTsdown: boolean;
+}) {
+  const scripts: Record<string, string> = {};
+  applyLintAndFormatScripts(scripts, opts);
+
+  if (opts.useVitest) {
+    scripts.test = "pnpm -r --if-present run test";
+  }
+
+  if (opts.useTsdown) {
+    scripts.build = "pnpm -r --if-present run build";
+  }
+
+  const devDependencies: Record<string, string> = {};
+  applyLintAndFormatDependencies(devDependencies, opts);
+
+  const manifest: {
+    name: string;
+    private: boolean;
+    packageManager: string;
+    scripts?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  } = {
+    name: opts.name,
+    private: true,
+    packageManager: opts.packageManager,
+  };
+
+  if (Object.keys(scripts).length > 0) {
+    manifest.scripts = scripts;
+  }
+
+  if (Object.keys(devDependencies).length > 0) {
+    manifest.devDependencies = devDependencies;
+  }
+
+  return JSON.stringify(manifest, null, 2) + "\n";
 }
 
 const DEFAULT_WORKFLOWS_REF = "7320d30bcd47cee17cc2d8d28250ba1ab1f742b8";

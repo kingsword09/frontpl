@@ -27,6 +27,7 @@ frontpl init my-frontend
 Follow the prompts to choose:
 
 - Package manager (`npm`/`pnpm`/`yarn`/`bun`/`deno`)
+- Optional `pnpm workspace` mode (monorepo skeleton)
 - Optional tooling: `oxlint`, `oxfmt`, `vitest`, `tsdown`
 
 When `oxlint` is enabled, generated projects use `@kingsword/lint-config` via `oxlint.config.ts`.
@@ -52,6 +53,12 @@ Generated output includes (based on options):
 - Relative TypeScript imports use explicit `.ts` extensions (e.g. generated `src/index.test.ts`)
 - Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
 - Optional GitHub Actions workflows in `.github/workflows/`
+
+When `pnpm workspace mode` is enabled:
+
+- Root contains `pnpm-workspace.yaml` and the workspace `package.json`
+- `oxlint`/`oxfmt` scripts, dependencies, and config files are generated at the workspace root
+- App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, and `tsconfig.json`
 
 ### `frontpl ci`
 
@@ -138,6 +145,7 @@ When CI workflows are enabled, frontpl can also generate `.github/dependabot.yml
 - Keeps `github-actions` updates enabled
 - Adds grouped dependencies updates (`groups.dependencies`)
 - Uses the selected `workingDirectory` (`.` -> `/`, monorepo package -> `/packages/<name>`)
+- In `frontpl init` + `pnpm workspace mode`, default `workingDirectory` is workspace root (`/`)
 - Maps JavaScript package managers (`npm`/`pnpm`/`yarn`/`bun`) to Dependabot `package-ecosystem: "npm"`
 
 ## Development

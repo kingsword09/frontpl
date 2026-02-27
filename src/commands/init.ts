@@ -23,6 +23,7 @@ import {
   srcVitestTemplate,
   tsconfigTemplate,
   tsdownConfigTemplate,
+  workspaceRootPackageJsonTemplate,
 } from "../lib/templates.ts";
 import { pathExists } from "../lib/utils.ts";
 
@@ -158,6 +159,9 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   }
 
   const pkgDir = pnpmWorkspace ? path.join(rootDir, "packages", projectName) : rootDir;
+  const toolingDir = pnpmWorkspace ? rootDir : pkgDir;
+  const packageUseOxlint = pnpmWorkspace ? false : useOxlint;
+  const packageUseOxfmt = pnpmWorkspace ? false : useOxfmt;
 
   const pmVersion = await detectPackageManagerVersion(packageManager);
   const packageManagerField = pmVersion
@@ -179,15 +183,18 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
     );
     await writeText(
       path.join(rootDir, "package.json"),
-      JSON.stringify(
-        {
-          name: projectName,
-          private: true,
-          packageManager: packageManagerField,
-        },
-        null,
-        2,
-      ) + "\n",
+      workspaceRootPackageJsonTemplate({
+        name: projectName,
+        packageManager: packageManagerField,
+        useOxlint,
+        oxlintVersion: "latest",
+        oxlintTsgolintVersion: "latest",
+        kingswordLintConfigVersion: "latest",
+        useOxfmt,
+        oxfmtVersion: "latest",
+        useVitest,
+        useTsdown,
+      }),
     );
   }
 
@@ -201,11 +208,11 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         name: projectName,
         packageManager: packageManagerField,
         typescriptVersion: "latest",
-        useOxlint,
+        useOxlint: packageUseOxlint,
         oxlintVersion: "latest",
         oxlintTsgolintVersion: "latest",
         kingswordLintConfigVersion: "latest",
-        useOxfmt,
+        useOxfmt: packageUseOxfmt,
         oxfmtVersion: "latest",
         useVitest,
         vitestVersion: "latest",
@@ -216,10 +223,10 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   ]);
 
   if (useOxlint) {
-    await writeText(path.join(pkgDir, "oxlint.config.ts"), oxlintConfigTemplate({ useVitest }));
+    await writeText(path.join(toolingDir, "oxlint.config.ts"), oxlintConfigTemplate({ useVitest }));
   }
   if (useOxfmt) {
-    await writeText(path.join(pkgDir, ".oxfmtrc.json"), oxfmtConfigTemplate());
+    await writeText(path.join(toolingDir, ".oxfmtrc.json"), oxfmtConfigTemplate());
   }
   if (useVitest) {
     await writeText(path.join(pkgDir, "src/index.test.ts"), srcVitestTemplate());
@@ -235,7 +242,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   }
 
   if (githubActions !== "none") {
-    const workingDirectory = pnpmWorkspace ? path.posix.join("packages", projectName) : ".";
+    const workingDirectory = ".";
     const lintCommand =
       useOxlint && packageManager !== "deno" ? pmRun(packageManager, "lint") : undefined;
     const formatCheckCommand =

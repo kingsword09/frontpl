@@ -7,4 +7,5 @@ export {
   githubDependabotTemplate,
   oxlintConfigTemplate,
   packageJsonTemplate,
+  workspaceRootPackageJsonTemplate,
 } from "./lib/templates.ts";
