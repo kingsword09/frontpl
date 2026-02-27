@@ -40,6 +40,8 @@ void test("oxfmt command migrates scripts and removes prettier assets", async ()
           scripts: {
             format: "prettier . --write",
             "format:check": "prettier . --check",
+            fmt: "oxfmt",
+            "fmt:check": "oxfmt --check",
             lint: "eslint .",
           },
           dependencies: {
@@ -67,8 +69,8 @@ void test("oxfmt command migrates scripts and removes prettier assets", async ()
     const pkg = JSON.parse(await readFile(path.join(dir, "package.json"), "utf8"));
     assert.equal(pkg.scripts.format, "oxfmt");
     assert.equal(pkg.scripts["format:check"], "oxfmt --check");
-    assert.equal(pkg.scripts.fmt, "oxfmt");
-    assert.equal(pkg.scripts["fmt:check"], "oxfmt --check");
+    assert.equal(pkg.scripts.fmt, undefined);
+    assert.equal(pkg.scripts["fmt:check"], undefined);
     assert.equal(pkg.scripts.lint, "eslint .");
     assert.equal(pkg.devDependencies.oxfmt, "^0.31.0");
     assert.equal(pkg.devDependencies.prettier, undefined);

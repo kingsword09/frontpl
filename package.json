@@ -44,8 +44,6 @@
     "lint:fix": "oxlint --type-aware --type-check --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "fmt": "pnpm run format",
-    "fmt:check": "pnpm run format:check",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {

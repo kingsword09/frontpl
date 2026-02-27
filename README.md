@@ -109,8 +109,6 @@ What it does:
 - Ensures `package.json` scripts use:
   - `format`: `oxfmt`
   - `format:check`: `oxfmt --check`
-  - `fmt`: `oxfmt`
-  - `fmt:check`: `oxfmt --check`
 - Ensures `devDependencies.oxfmt` exists (defaults to `latest` when missing)
 - Creates or updates `.oxfmtrc.json`
 - Optionally removes `prettier` / `prettier-plugin-*` / `@prettier/plugin-*` dependencies, `package.json#prettier`, and Prettier config files (`.prettierrc*`, `prettier.config.*`)

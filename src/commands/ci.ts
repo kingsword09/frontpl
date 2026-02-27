@@ -305,10 +305,9 @@ async function resolveCiCommands(
   const hasLint = typeof scripts.lint === "string";
   const hasTest = typeof scripts.test === "string";
   const hasFormatCheck = typeof scripts["format:check"] === "string";
-  const hasFmtCheck = typeof scripts["fmt:check"] === "string";
 
   const runLintDefault = hasLint;
-  const runFormatCheckDefault = hasFormatCheck || hasFmtCheck;
+  const runFormatCheckDefault = hasFormatCheck;
   const runTestsDefault = hasTest;
 
   const runLint = await confirm({
@@ -339,11 +338,9 @@ async function resolveCiCommands(
   const formatCheckCommand =
     runFormatCheck && hasFormatCheck
       ? pmRun(packageManager, "format:check")
-      : runFormatCheck && hasFmtCheck
-        ? pmRun(packageManager, "fmt:check")
-        : runFormatCheck
-          ? await promptCommand("Format check command", pmRun(packageManager, "format:check"))
-          : undefined;
+      : runFormatCheck
+        ? await promptCommand("Format check command", pmRun(packageManager, "format:check"))
+        : undefined;
 
   const testCommand =
     runTests && hasTest
