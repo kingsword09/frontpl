@@ -113,6 +113,8 @@ void test("workspace root package template hosts lint/format toolchain", () => {
   assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
   assert.equal(pkg.scripts.format, "oxfmt");
   assert.equal(pkg.scripts["format:check"], "oxfmt --check");
+  assert.equal(pkg.scripts.fmt, undefined);
+  assert.equal(pkg.scripts["fmt:check"], undefined);
   assert.equal(pkg.scripts.test, "pnpm -r --if-present run test");
   assert.equal(pkg.scripts.build, "pnpm -r --if-present run build");
   assert.equal(pkg.devDependencies.oxlint, "latest");
@@ -138,6 +140,7 @@ void test("workspace package template omits oxlint/oxfmt when managed at root", 
 
   assert.equal(pkg.scripts.lint, undefined);
   assert.equal(pkg.scripts.format, undefined);
+  assert.equal(pkg.scripts.fmt, undefined);
   assert.equal(pkg.scripts.typecheck, "tsc --noEmit");
   assert.equal(pkg.scripts.test, "vitest");
   assert.equal(pkg.scripts.build, "tsdown");

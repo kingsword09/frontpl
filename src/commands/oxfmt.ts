@@ -18,6 +18,9 @@ import { pathExists } from "../lib/utils.ts";
 const OXFMT_SCRIPTS = {
   format: "oxfmt",
   "format:check": "oxfmt --check",
+} as const;
+
+const OXFMT_LEGACY_SCRIPTS = {
   fmt: "oxfmt",
   "fmt:check": "oxfmt --check",
 } as const;
@@ -54,6 +57,7 @@ type OxfmtConfigAction = "migrated" | "rebuilt" | "kept-existing";
 type MigrationStats = {
   scriptsUpdated: string[];
   scriptsKept: string[];
+  removedLegacyScripts: string[];
   addedOxfmtDependency: boolean;
   removedPackageJsonPrettierConfig: boolean;
   removedDependencies: string[];
@@ -102,6 +106,10 @@ export async function runOxfmt({ yes = false }: CommandOptions = {}) {
         : stats.scriptsKept.length > 0
           ? `kept existing scripts: ${stats.scriptsKept.join(", ")}`
           : "scripts already aligned";
+    const legacyScriptSummary =
+      stats.removedLegacyScripts.length > 0
+        ? `removed legacy scripts: ${stats.removedLegacyScripts.join(", ")}`
+        : "no legacy scripts removed";
 
     const depSummary = stats.addedOxfmtDependency
       ? "added devDependency: oxfmt"
@@ -141,6 +149,7 @@ export async function runOxfmt({ yes = false }: CommandOptions = {}) {
       [
         "Done. Applied oxfmt migration.",
         `- ${scriptSummary}`,
+        `- ${legacyScriptSummary}`,
         `- ${depSummary}`,
         `- ${removedDepsSummary}`,
         `- ${removedPackageJsonPrettierSummary}`,
@@ -194,6 +203,13 @@ async function migrateToOxfmt(opts: {
     scriptsUpdated.push(name);
   }
 
+  const removedLegacyScripts: string[] = [];
+  for (const [name, command] of Object.entries(OXFMT_LEGACY_SCRIPTS)) {
+    if (scripts[name] !== command) continue;
+    delete scripts[name];
+    removedLegacyScripts.push(name);
+  }
+
   pkg.scripts = scripts;
 
   const devDependencies = { ...pkg.devDependencies };
@@ -241,6 +257,7 @@ async function migrateToOxfmt(opts: {
   return {
     scriptsUpdated,
     scriptsKept,
+    removedLegacyScripts,
     addedOxfmtDependency,
     removedPackageJsonPrettierConfig,
     removedDependencies,

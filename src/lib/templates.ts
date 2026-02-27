@@ -126,8 +126,6 @@ function applyLintAndFormatScripts(
   if (opts.useOxfmt) {
     scripts.format = "oxfmt";
     scripts["format:check"] = "oxfmt --check";
-    scripts.fmt = "oxfmt";
-    scripts["fmt:check"] = "oxfmt --check";
   }
 }
 
