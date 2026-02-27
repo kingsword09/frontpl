@@ -80,6 +80,32 @@ What it does:
 
 Use `--yes` (or `-y`) to skip confirmations and use defaults inferred from root scripts.
 
+### `frontpl pkg`
+
+Normalize current directory `package.json` for npm publishing (requires `github.com` git remote).
+
+What it does:
+
+- Requires current directory to contain `package.json`
+- Requires git repository with `remote.origin.url` on `github.com`
+- Updates publish metadata:
+  - `homepage`
+  - `bugs.url`
+  - `repository` (`type`, `url`, and `directory` when run in monorepo subfolder)
+- Applies publish defaults when missing:
+  - `private: false`, `version: "0.0.0"`
+  - `license`:
+    - interactive select on each run (`MIT` / `Apache-2.0`)
+    - with `--yes`, keeps existing license; defaults to `MIT` only when missing
+    - option keys aligned with GitHub Licenses API: `mit` / `apache-2.0`
+  - `type: "module"`, `files: ["dist"]`
+  - `main`, `types`, and `exports` pointing to `dist/index`
+  - `publishConfig.access: "public"`
+  - `engines.node: ">=22.0.0"`
+  - `scripts.prepublishOnly` from existing `scripts.build`
+
+Use `--yes` (or `-y`) to skip confirmation.
+
 ### `frontpl ci`
 
 Add or update CI/Release workflows for an existing project (run it in your repo root).

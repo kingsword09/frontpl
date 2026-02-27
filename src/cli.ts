@@ -5,6 +5,7 @@ import { runCi } from "./commands/ci.ts";
 import { runInit } from "./commands/init.ts";
 import { runOxlint } from "./commands/oxlint.ts";
 import { runOxfmt } from "./commands/oxfmt.ts";
+import { runPackage } from "./commands/package.ts";
 
 async function main() {
   await bin("frontpl", "Scaffold standardized frontend templates")
@@ -36,6 +37,11 @@ async function main() {
     .option("--yes, -y", "Skip confirmations and use defaults")
     .action(async (options) => {
       await runOxfmt({ yes: options.yes === true });
+    })
+    .command("pkg", "Normalize package.json for npm publishing using GitHub remote")
+    .option("--yes, -y", "Skip confirmations and use defaults")
+    .action(async (options) => {
+      await runPackage({ yes: options.yes === true });
     })
     .run();
 }
