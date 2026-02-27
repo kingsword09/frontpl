@@ -42,6 +42,7 @@ Generated lint-related dependencies (`oxlint`, `oxlint-tsgolint`, `oxfmt`, `@kin
 ### `frontpl [name]` / `frontpl init [name]`
 
 Scaffold a new project into `./<name>` (or prompt for a name when omitted).
+Project names support letters (including uppercase/camel case), numbers, `.`, `_`, `-` (cannot start with `.` or `_`).
 
 Generated output includes (based on options):
 

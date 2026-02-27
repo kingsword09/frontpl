@@ -6,6 +6,7 @@ import {
   githubDependabotTemplate,
   oxlintConfigTemplate,
   packageJsonTemplate,
+  validateProjectName,
 } from "../dist/index.mjs";
 import { githubCliCiWorkflowTemplate } from "../dist/index.mjs";
 
@@ -60,6 +61,34 @@ void test("package template falls back to tsc typecheck when oxlint is disabled"
   assert.equal(pkg.scripts.lint, undefined);
   assert.equal(pkg.devDependencies.oxlint, undefined);
   assert.equal(pkg.devDependencies["@kingsword/lint-config"], undefined);
+});
+
+void test("init project name validator accepts camel case names", () => {
+  assert.equal(validateProjectName("TalentPrism"), undefined);
+});
+
+void test("init project name validator still rejects unsupported characters", () => {
+  assert.equal(validateProjectName("Talent Prism"), "Use letters, numbers, '.', '_' or '-'");
+});
+
+void test("package template preserves camel case project names", () => {
+  const pkgText = packageJsonTemplate({
+    name: "TalentPrism",
+    packageManager: "pnpm@10.28.1",
+    typescriptVersion: "latest",
+    useOxlint: true,
+    oxlintVersion: "latest",
+    oxlintTsgolintVersion: "latest",
+    kingswordLintConfigVersion: "latest",
+    useOxfmt: true,
+    oxfmtVersion: "latest",
+    useVitest: false,
+    useTsdown: true,
+    tsdownVersion: "latest",
+  });
+
+  const pkg = JSON.parse(pkgText);
+  assert.equal(pkg.name, "TalentPrism");
 });
 
 void test("ci template can pin explicit run commands", () => {
