@@ -53,9 +53,9 @@
   "devDependencies": {
     "@kingsword/lint-config": "^0.2.1",
     "@types/node": "^25.0.10",
-    "oxfmt": "^0.32.0",
+    "oxfmt": "^0.36.0",
     "oxlint": "^1.46.0",
-    "oxlint-tsgolint": "^0.13.0",
+    "oxlint-tsgolint": "^0.15.0",
     "tsdown": "^0.20.1",
     "typescript": "^5.9.3"
   },
