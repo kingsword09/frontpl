@@ -46,13 +46,14 @@ const OXLINT_DEPENDENCIES = ["oxlint", "oxlint-tsgolint", "@kingsword/lint-confi
 
 type CommandOptions = {
   yes?: boolean;
+  init?: boolean;
 };
 
-type MigrationStrategy = "migrate" | "replace";
+type OxlintMode = "init" | "migrate" | "replace";
 type OxlintConfigAction = "written" | "kept-existing";
 
 type MigrationStats = {
-  strategy: MigrationStrategy;
+  strategy: Exclude<OxlintMode, "init">;
   scriptsUpdated: string[];
   scriptsKept: string[];
   removedTypecheckScript: boolean;
@@ -63,7 +64,7 @@ type MigrationStats = {
   oxlintConfigAction: OxlintConfigAction;
 };
 
-export async function runOxlint({ yes = false }: CommandOptions = {}) {
+export async function runOxlint({ yes = false, init = false }: CommandOptions = {}) {
   try {
     intro("frontpl (oxlint)");
 
@@ -79,13 +80,30 @@ export async function runOxlint({ yes = false }: CommandOptions = {}) {
     }
 
     const packageManager = (await detectPackageManager(rootDir)) ?? "pnpm";
-    const strategy = yes ? "replace" : await askMigrationStrategy({ rootDir, pkg });
+    const mode = init ? "init" : yes ? "replace" : await askOxlintMode({ rootDir, pkg });
+
+    if (mode === "init") {
+      const oxlintConfigAction = await applyOxlintConfig({
+        pkg,
+        oxlintConfigPath,
+        yes,
+      });
+
+      outro(
+        [
+          "Done. Initialized oxlint config.",
+          `- ${oxlintConfigAction === "written" ? "wrote oxlint.config.ts" : "kept existing oxlint.config.ts"}`,
+          "- package.json and dependencies left unchanged",
+        ].join("\n"),
+      );
+      return;
+    }
 
     const stats = await migrateToOxlint({
       pkg,
       rootDir,
       oxlintConfigPath,
-      strategy,
+      strategy: mode,
       yes,
     });
 
@@ -165,7 +183,7 @@ async function migrateToOxlint(opts: {
   pkg: PackageJson;
   rootDir: string;
   oxlintConfigPath: string;
-  strategy: MigrationStrategy;
+  strategy: Exclude<OxlintMode, "init">;
   yes: boolean;
 }): Promise<MigrationStats> {
   const { pkg, rootDir, oxlintConfigPath, strategy, yes } = opts;
@@ -294,21 +312,25 @@ async function askConfirm(opts: { message: string; initialValue: boolean }) {
   return answer;
 }
 
-async function askMigrationStrategy(opts: {
-  rootDir: string;
-  pkg: PackageJson;
-}): Promise<MigrationStrategy> {
+async function askOxlintMode(opts: { rootDir: string; pkg: PackageJson }): Promise<OxlintMode> {
   const hasEslintAssets = await detectEslintAssets(opts.rootDir, opts.pkg);
-  const strategy = await select<MigrationStrategy>({
-    message: "ESLint strategy",
-    initialValue: hasEslintAssets ? "migrate" : "replace",
+  const hasOxlintConfig = await pathExists(path.join(opts.rootDir, "oxlint.config.ts"));
+  const mode = await select<OxlintMode>({
+    message: "oxlint mode",
+    initialValue:
+      !hasOxlintConfig && detectExistingOxlintSetup(opts.pkg)
+        ? "init"
+        : hasEslintAssets
+          ? "migrate"
+          : "replace",
     options: [
+      { value: "init", label: "Initialize oxlint.config.ts only" },
       { value: "migrate", label: "Migrate gradually (keep ESLint assets)" },
       { value: "replace", label: "Replace ESLint directly (current mode)" },
     ],
   });
-  if (isCancel(strategy)) return abort();
-  return strategy;
+  if (isCancel(mode)) return abort();
+  return mode;
 }
 
 async function detectEslintAssets(rootDir: string, pkg: PackageJson): Promise<boolean> {
@@ -352,6 +374,19 @@ async function applyOxlintConfig(opts: {
 
 function detectUseVitest(scripts: Record<string, string> | undefined) {
   return typeof scripts?.test === "string" && scripts.test.includes("vitest");
+}
+
+function detectExistingOxlintSetup(pkg: PackageJson) {
+  return (
+    pkg.scripts?.lint === OXLINT_COMMAND ||
+    pkg.scripts?.["lint:fix"] === OXLINT_FIX_COMMAND ||
+    Boolean(
+      pkg.dependencies?.oxlint ||
+      pkg.devDependencies?.oxlint ||
+      pkg.devDependencies?.["oxlint-tsgolint"] ||
+      pkg.devDependencies?.["@kingsword/lint-config"],
+    )
+  );
 }
 
 function removeEslintDependencies(

@@ -147,7 +147,8 @@ Add/migrate linting in the current project to `oxlint`.
 
 What it does:
 
-- Asks strategy interactively:
+- Asks mode interactively:
+  - Initialize `oxlint.config.ts` only
   - Migrate gradually (keep existing ESLint assets)
   - Replace ESLint directly (current mode)
 - Ensures `package.json` scripts use:
@@ -164,6 +165,8 @@ What it does:
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
 With `--yes`, strategy defaults to `replace`.
+When selecting initialize mode, only `oxlint.config.ts` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
+That means existing `lint` scripts are kept as-is in initialize mode; only migrate/replace mode may update them.
 
 ### `frontpl oxfmt`
 
@@ -171,7 +174,8 @@ Add/migrate formatting in the current project to `oxfmt`.
 
 What it does:
 
-- Asks config strategy interactively:
+- Asks mode interactively:
+  - Initialize `.oxfmtrc.json` only
   - Migrate from Prettier (`oxfmt --migrate=prettier`)
   - Rebuild `.oxfmtrc.json` (current mode)
 - Ensures `package.json` scripts use:
@@ -188,6 +192,8 @@ What it does:
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
 With `--yes`, config strategy defaults to rebuild `.oxfmtrc.json`.
+When selecting initialize mode, only `.oxfmtrc.json` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
+That means existing `fmt` / `format` scripts are kept as-is in initialize mode; only migrate/rebuild mode may update standard scripts.
 
 ## GitHub Actions (CI + Release)
 

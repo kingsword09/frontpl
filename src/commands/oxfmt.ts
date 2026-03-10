@@ -48,9 +48,11 @@ const PRETTIER_CONFIG_FILES = [
 
 type CommandOptions = {
   yes?: boolean;
+  init?: boolean;
 };
 
 type ConfigMode = "migrate" | "rebuild";
+type OxfmtMode = "init" | ConfigMode;
 
 type OxfmtConfigAction = "migrated" | "rebuilt" | "kept-existing";
 
@@ -65,7 +67,7 @@ type MigrationStats = {
   oxfmtConfigAction: OxfmtConfigAction;
 };
 
-export async function runOxfmt({ yes = false }: CommandOptions = {}) {
+export async function runOxfmt({ yes = false, init = false }: CommandOptions = {}) {
   try {
     intro("frontpl (oxfmt)");
 
@@ -81,14 +83,33 @@ export async function runOxfmt({ yes = false }: CommandOptions = {}) {
     }
 
     const packageManager = (await detectPackageManager(rootDir)) ?? "pnpm";
-    const configMode = yes ? "rebuild" : await askConfigMode({ rootDir, pkg });
+    const mode = init ? "init" : yes ? "rebuild" : await askOxfmtMode({ rootDir, pkg });
+
+    if (mode === "init") {
+      const oxfmtConfigAction = await applyOxfmtConfig({
+        rootDir,
+        oxfmtConfigPath,
+        packageManager,
+        configMode: "rebuild",
+        yes,
+      });
+
+      outro(
+        [
+          "Done. Initialized oxfmt config.",
+          `- ${oxfmtConfigAction === "rebuilt" ? "wrote .oxfmtrc.json" : "kept existing .oxfmtrc.json"}`,
+          "- package.json and dependencies left unchanged",
+        ].join("\n"),
+      );
+      return;
+    }
 
     const stats = await migrateToOxfmt({
       pkg,
       rootDir,
       oxfmtConfigPath,
       packageManager,
-      configMode,
+      configMode: mode,
       yes,
     });
 
@@ -299,12 +320,19 @@ async function askConfirm(opts: { message: string; initialValue: boolean }) {
   return answer;
 }
 
-async function askConfigMode(opts: { rootDir: string; pkg: PackageJson }): Promise<ConfigMode> {
+async function askOxfmtMode(opts: { rootDir: string; pkg: PackageJson }): Promise<OxfmtMode> {
   const hasPrettierConfig = await detectPrettierConfig(opts.rootDir, opts.pkg);
-  const mode = await select<ConfigMode>({
-    message: "Prettier config strategy",
-    initialValue: hasPrettierConfig ? "migrate" : "rebuild",
+  const hasOxfmtConfig = await pathExists(path.join(opts.rootDir, ".oxfmtrc.json"));
+  const mode = await select<OxfmtMode>({
+    message: "oxfmt mode",
+    initialValue:
+      !hasOxfmtConfig && detectExistingOxfmtSetup(opts.pkg)
+        ? "init"
+        : hasPrettierConfig
+          ? "migrate"
+          : "rebuild",
     options: [
+      { value: "init", label: "Initialize .oxfmtrc.json only" },
       { value: "migrate", label: "Migrate from Prettier (oxfmt --migrate=prettier)" },
       { value: "rebuild", label: "Rebuild .oxfmtrc.json (current mode)" },
     ],
@@ -427,6 +455,16 @@ function isPrettierDependency(name: string) {
     name === "prettier" ||
     /(^|\/)prettier-plugin-/.test(name) ||
     name.startsWith("@prettier/plugin-")
+  );
+}
+
+function detectExistingOxfmtSetup(pkg: PackageJson) {
+  return (
+    pkg.scripts?.format === OXFMT_SCRIPTS.format ||
+    pkg.scripts?.["format:check"] === OXFMT_SCRIPTS["format:check"] ||
+    pkg.scripts?.fmt === OXFMT_LEGACY_SCRIPTS.fmt ||
+    pkg.scripts?.["fmt:check"] === OXFMT_LEGACY_SCRIPTS["fmt:check"] ||
+    Boolean(pkg.dependencies?.oxfmt || pkg.devDependencies?.oxfmt)
   );
 }
 
