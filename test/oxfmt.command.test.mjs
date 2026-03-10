@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const CLI_PATH = fileURLToPath(new URL("../dist/cli.mjs", import.meta.url));
+const INDEX_URL = new URL("../dist/index.mjs", import.meta.url).href;
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "frontpl-oxfmt-"));
@@ -22,6 +23,21 @@ function runCli(cwd, args) {
     cwd,
     encoding: "utf8",
   });
+}
+
+function runOxfmtInit(cwd) {
+  return spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `import { runOxfmt } from ${JSON.stringify(INDEX_URL)}; process.chdir(${JSON.stringify(cwd)}); await runOxfmt({ yes: true, init: true });`,
+    ],
+    {
+      cwd,
+      encoding: "utf8",
+    },
+  );
 }
 
 void test("oxfmt command migrates scripts and removes prettier assets", async () => {
@@ -100,5 +116,52 @@ void test("oxfmt command exits when package.json is missing", async () => {
     const result = runCli(dir, ["oxfmt", "--yes"]);
     assert.notEqual(result.status, 0);
     assert.match(`${result.stdout}\n${result.stderr}`, /Missing package\.json/);
+  });
+});
+
+void test("oxfmt --init only writes .oxfmtrc.json", async () => {
+  await withTempDir(async (dir) => {
+    const initialPackageJson =
+      JSON.stringify(
+        {
+          name: "demo-app",
+          version: "1.0.0",
+          private: true,
+          packageManager: "deno@2.2.0",
+          prettier: {
+            semi: false,
+          },
+          scripts: {
+            format: "prettier . --write",
+          },
+          devDependencies: {
+            oxfmt: "^0.36.0",
+            prettier: "^3.4.0",
+          },
+        },
+        null,
+        2,
+      ) + "\n";
+
+    await writeFile(path.join(dir, "package.json"), initialPackageJson);
+    await writeFile(path.join(dir, ".prettierrc"), "{}\n");
+
+    const result = runOxfmtInit(dir);
+    assert.equal(result.status, 0);
+
+    assert.equal(await readFile(path.join(dir, "package.json"), "utf8"), initialPackageJson);
+    assert.equal(await readFile(path.join(dir, ".prettierrc"), "utf8"), "{}\n");
+
+    const oxfmtConfig = JSON.parse(await readFile(path.join(dir, ".oxfmtrc.json"), "utf8"));
+    assert.deepEqual(oxfmtConfig, {
+      $schema: "./node_modules/oxfmt/configuration_schema.json",
+      useTabs: false,
+      indentWidth: 2,
+      lineWidth: 100,
+      trailingComma: "all",
+      semi: true,
+      singleQuote: false,
+      arrowParens: "always",
+    });
   });
 });

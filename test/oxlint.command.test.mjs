@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const CLI_PATH = fileURLToPath(new URL("../dist/cli.mjs", import.meta.url));
+const INDEX_URL = new URL("../dist/index.mjs", import.meta.url).href;
 
 async function withTempDir(fn) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "frontpl-oxlint-"));
@@ -22,6 +23,21 @@ function runCli(cwd, args) {
     cwd,
     encoding: "utf8",
   });
+}
+
+function runOxlintInit(cwd) {
+  return spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `import { runOxlint } from ${JSON.stringify(INDEX_URL)}; process.chdir(${JSON.stringify(cwd)}); await runOxlint({ yes: true, init: true });`,
+    ],
+    {
+      cwd,
+      encoding: "utf8",
+    },
+  );
 }
 
 void test("oxlint command replaces eslint scripts/assets and writes oxlint config", async () => {
@@ -92,5 +108,41 @@ void test("oxlint command exits when package.json is missing", async () => {
     const result = runCli(dir, ["oxlint", "--yes"]);
     assert.notEqual(result.status, 0);
     assert.match(`${result.stdout}\n${result.stderr}`, /Missing package\.json/);
+  });
+});
+
+void test("oxlint --init only writes oxlint config", async () => {
+  await withTempDir(async (dir) => {
+    const initialPackageJson =
+      JSON.stringify(
+        {
+          name: "demo-app",
+          version: "1.0.0",
+          private: true,
+          packageManager: "deno@2.2.0",
+          scripts: {
+            lint: "eslint .",
+            test: "vitest",
+          },
+          devDependencies: {
+            oxlint: "^1.51.0",
+            "oxlint-tsgolint": "^0.15.0",
+            "@kingsword/lint-config": "^0.2.2",
+          },
+        },
+        null,
+        2,
+      ) + "\n";
+
+    await writeFile(path.join(dir, "package.json"), initialPackageJson);
+
+    const result = runOxlintInit(dir);
+    assert.equal(result.status, 0);
+
+    assert.equal(await readFile(path.join(dir, "package.json"), "utf8"), initialPackageJson);
+
+    const config = await readFile(path.join(dir, "oxlint.config.ts"), "utf8");
+    assert.match(config, /@kingsword\/lint-config\/config/);
+    assert.match(config, /test: "vitest"/);
   });
 });
