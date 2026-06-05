@@ -136,7 +136,7 @@ function normalizePackageJson(
   pkg.publishConfig = publishConfig;
 
   const engines = pkg.engines ? { ...pkg.engines } : {};
-  if (!engines.node) engines.node = ">=22.0.0";
+  if (!engines.node) engines.node = ">=22.12.0";
   pkg.engines = engines;
 
   if (pkg.scripts && typeof pkg.scripts.build === "string" && !pkg.scripts.prepublishOnly) {

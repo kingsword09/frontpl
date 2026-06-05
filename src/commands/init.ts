@@ -15,14 +15,12 @@ import {
   githubCliReleaseTagWorkflowTemplate,
   githubDependabotTemplate,
   gitignoreTemplate,
-  oxfmtConfigTemplate,
-  oxlintConfigTemplate,
   packageJsonTemplate,
   readmeTemplate,
   srcIndexTemplate,
   srcVitestTemplate,
   tsconfigTemplate,
-  tsdownConfigTemplate,
+  vitePlusConfigTemplate,
   workspaceRootPackageJsonTemplate,
 } from "../lib/templates.ts";
 import { pathExists } from "../lib/utils.ts";
@@ -79,25 +77,25 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
   if (isCancel(pnpmWorkspace)) return onCancel();
 
   const useOxlint = await confirm({
-    message: "Enable oxlint (@kingsword/lint-config preset)?",
+    message: "Enable Vite+ lint (@kingsword/lint-config preset)?",
     initialValue: true,
   });
   if (isCancel(useOxlint)) return onCancel();
 
   const useOxfmt = await confirm({
-    message: "Enable oxfmt (code formatting)?",
+    message: "Enable Vite+ format (Oxfmt)?",
     initialValue: true,
   });
   if (isCancel(useOxfmt)) return onCancel();
 
   const useVitest = await confirm({
-    message: "Add Vitest?",
+    message: "Add Vite+ test (Vitest)?",
     initialValue: false,
   });
   if (isCancel(useVitest)) return onCancel();
 
   const useTsdown = await confirm({
-    message: "Add tsdown build?",
+    message: "Add Vite+ pack build (tsdown)?",
     initialValue: true,
   });
   if (isCancel(useTsdown)) return onCancel();
@@ -193,6 +191,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         kingswordLintConfigVersion: "latest",
         useOxfmt,
         oxfmtVersion: "latest",
+        vitePlusVersion: "latest",
         useVitest,
         useTsdown,
       }),
@@ -216,6 +215,7 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
         kingswordLintConfigVersion: "latest",
         useOxfmt: packageUseOxfmt,
         oxfmtVersion: "latest",
+        vitePlusVersion: "latest",
         useVitest,
         vitestVersion: "latest",
         useTsdown,
@@ -224,17 +224,42 @@ export async function runInit({ nameArg }: { nameArg?: string }) {
     ),
   ]);
 
-  if (useOxlint) {
-    await writeText(path.join(toolingDir, "oxlint.config.ts"), oxlintConfigTemplate({ useVitest }));
-  }
-  if (useOxfmt) {
-    await writeText(path.join(toolingDir, ".oxfmtrc.json"), oxfmtConfigTemplate());
+  if (pnpmWorkspace) {
+    if (useOxlint || useOxfmt) {
+      await writeText(
+        path.join(toolingDir, "vite.config.ts"),
+        vitePlusConfigTemplate({
+          useOxlint,
+          useOxfmt,
+          useVitest: false,
+          useTsdown: false,
+        }),
+      );
+    }
+    if (useVitest || useTsdown) {
+      await writeText(
+        path.join(pkgDir, "vite.config.ts"),
+        vitePlusConfigTemplate({
+          useOxlint: false,
+          useOxfmt: false,
+          useVitest,
+          useTsdown,
+        }),
+      );
+    }
+  } else if (useOxlint || useOxfmt || useVitest || useTsdown) {
+    await writeText(
+      path.join(toolingDir, "vite.config.ts"),
+      vitePlusConfigTemplate({
+        useOxlint,
+        useOxfmt,
+        useVitest,
+        useTsdown,
+      }),
+    );
   }
   if (useVitest) {
     await writeText(path.join(pkgDir, "src/index.test.ts"), srcVitestTemplate());
-  }
-  if (useTsdown) {
-    await writeText(path.join(pkgDir, "tsdown.config.ts"), tsdownConfigTemplate());
   }
   if (packageManager === "deno") {
     await writeText(

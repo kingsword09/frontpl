@@ -10,7 +10,7 @@ import {
   srcIndexTemplate,
   srcVitestTemplate,
   tsconfigTemplate,
-  tsdownConfigTemplate,
+  vitePlusConfigTemplate,
 } from "../lib/templates.ts";
 import { detectPackageManager, readPackageJson } from "../lib/project.ts";
 import { writeText } from "../lib/fs.ts";
@@ -69,7 +69,7 @@ export async function runAdd({ nameArg, yes = false }: CommandOptions = {}) {
   const useVitest = yes
     ? useVitestDefault
     : await confirm({
-        message: "Add Vitest?",
+        message: "Add Vite+ test (Vitest)?",
         initialValue: useVitestDefault,
       });
   if (isCancel(useVitest)) return onCancel();
@@ -77,20 +77,16 @@ export async function runAdd({ nameArg, yes = false }: CommandOptions = {}) {
   const useTsdown = yes
     ? useTsdownDefault
     : await confirm({
-        message: "Add tsdown build?",
+        message: "Add Vite+ pack build (tsdown)?",
         initialValue: useTsdownDefault,
       });
   if (isCancel(useTsdown)) return onCancel();
 
   const resolvedPackageManagerField = await resolvePnpmPackageManagerField(packageManagerField);
-  const rootHasOxlint =
-    Boolean(rootPkg?.devDependencies?.oxlint) ||
-    Boolean(rootPkg?.devDependencies?.["oxlint-tsgolint"]) ||
-    (await pathExists(path.join(rootDir, "oxlint.config.ts")));
+  const rootHasVitePlusLint = Boolean(rootPkg?.scripts?.lint?.includes("vp lint"));
 
   const typescriptVersion = rootPkg?.devDependencies?.typescript ?? "latest";
-  const vitestVersion = rootPkg?.devDependencies?.vitest ?? "latest";
-  const tsdownVersion = rootPkg?.devDependencies?.tsdown ?? "latest";
+  const vitePlusVersion = rootPkg?.devDependencies?.["vite-plus"] ?? "latest";
 
   await mkdir(path.join(packageDir, "src"), { recursive: true });
 
@@ -105,12 +101,11 @@ export async function runAdd({ nameArg, yes = false }: CommandOptions = {}) {
         packageManager: resolvedPackageManagerField,
         typescriptVersion,
         useOxlint: false,
-        includeTypecheckWithoutOxlint: !rootHasOxlint,
+        includeTypecheckWithoutOxlint: !rootHasVitePlusLint,
         useOxfmt: false,
         useVitest,
-        vitestVersion,
+        vitePlusVersion,
         useTsdown,
-        tsdownVersion,
       }),
     ),
   ]);
@@ -118,8 +113,16 @@ export async function runAdd({ nameArg, yes = false }: CommandOptions = {}) {
   if (useVitest) {
     await writeText(path.join(packageDir, "src/index.test.ts"), srcVitestTemplate());
   }
-  if (useTsdown) {
-    await writeText(path.join(packageDir, "tsdown.config.ts"), tsdownConfigTemplate());
+  if (useVitest || useTsdown) {
+    await writeText(
+      path.join(packageDir, "vite.config.ts"),
+      vitePlusConfigTemplate({
+        useOxlint: false,
+        useOxfmt: false,
+        useVitest,
+        useTsdown,
+      }),
+    );
   }
 
   outro(

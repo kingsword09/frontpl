@@ -73,7 +73,6 @@ void test("add command exits when workspace is not pnpm", async () => {
 void test("add command scaffolds package in pnpm workspace", async () => {
   await withTempDir(async (dir) => {
     await writeFile(path.join(dir, "pnpm-workspace.yaml"), 'packages:\n  - "packages/*"\n');
-    await writeFile(path.join(dir, "oxlint.config.ts"), "export default {};\n");
     await writeFile(
       path.join(dir, "package.json"),
       JSON.stringify(
@@ -82,14 +81,14 @@ void test("add command scaffolds package in pnpm workspace", async () => {
           private: true,
           packageManager: "pnpm@10.30.3",
           scripts: {
-            test: "pnpm -r --if-present run test",
-            build: "pnpm -r --if-present run build",
+            lint: "vp lint",
+            test: "vp run -r test",
+            build: "vp run -r build",
           },
           devDependencies: {
             oxlint: "^1.47.0",
             typescript: "^5.9.3",
-            vitest: "^3.2.4",
-            tsdown: "^0.20.3",
+            "vite-plus": "^0.1.24",
           },
         },
         null,
@@ -106,19 +105,26 @@ void test("add command scaffolds package in pnpm workspace", async () => {
     assert.equal(pkg.name, "TalentPrism");
     assert.equal(pkg.packageManager, "pnpm@10.30.3");
     assert.equal(pkg.scripts.typecheck, undefined);
-    assert.equal(pkg.scripts.test, "vitest");
-    assert.equal(pkg.scripts.build, "tsdown");
+    assert.equal(pkg.scripts.test, "vp test");
+    assert.equal(pkg.scripts.build, "vp pack");
     assert.equal(pkg.scripts.lint, undefined);
     assert.equal(pkg.scripts.format, undefined);
     assert.equal(pkg.devDependencies.typescript, "^5.9.3");
-    assert.equal(pkg.devDependencies.vitest, "^3.2.4");
-    assert.equal(pkg.devDependencies.tsdown, "^0.20.3");
+    assert.equal(pkg.devDependencies["vite-plus"], "^0.1.24");
+    assert.equal(pkg.devDependencies.vitest, undefined);
+    assert.equal(pkg.devDependencies.tsdown, undefined);
 
     await stat(path.join(dir, "packages", "TalentPrism", "README.md"));
     await stat(path.join(dir, "packages", "TalentPrism", "src", "index.ts"));
     await stat(path.join(dir, "packages", "TalentPrism", "src", "index.test.ts"));
     await stat(path.join(dir, "packages", "TalentPrism", "tsconfig.json"));
-    await stat(path.join(dir, "packages", "TalentPrism", "tsdown.config.ts"));
+    const viteConfig = await readFile(
+      path.join(dir, "packages", "TalentPrism", "vite.config.ts"),
+      "utf8",
+    );
+    assert.match(viteConfig, /import \{ defineConfig \} from "vite-plus"/);
+    assert.match(viteConfig, /test: \{/);
+    assert.match(viteConfig, /pack: \{/);
   });
 });
 

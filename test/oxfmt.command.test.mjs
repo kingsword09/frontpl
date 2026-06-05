@@ -40,7 +40,7 @@ function runOxfmtInit(cwd) {
   );
 }
 
-void test("oxfmt command migrates scripts and removes prettier assets", async () => {
+void test("oxfmt command migrates scripts and writes Vite+ format config", async () => {
   await withTempDir(async (dir) => {
     await writeFile(
       path.join(dir, "package.json"),
@@ -75,6 +75,7 @@ void test("oxfmt command migrates scripts and removes prettier assets", async ()
 
     await writeFile(path.join(dir, ".prettierrc"), "{}\n");
     await writeFile(path.join(dir, ".prettierrc.toml"), "semi = false\n");
+    await writeFile(path.join(dir, ".oxfmtrc.json"), "{}\n");
     await writeFile(path.join(dir, "prettier.config.cjs"), "module.exports = {};\n");
     await writeFile(path.join(dir, "prettier.config.ts"), "export default {};\n");
 
@@ -83,29 +84,25 @@ void test("oxfmt command migrates scripts and removes prettier assets", async ()
     assert.equal(result.status, 0);
 
     const pkg = JSON.parse(await readFile(path.join(dir, "package.json"), "utf8"));
-    assert.equal(pkg.scripts.format, "oxfmt");
-    assert.equal(pkg.scripts["format:check"], "oxfmt --check");
+    assert.equal(pkg.scripts.format, "vp fmt");
+    assert.equal(pkg.scripts["format:check"], "vp fmt --check");
     assert.equal(pkg.scripts.fmt, undefined);
     assert.equal(pkg.scripts["fmt:check"], undefined);
     assert.equal(pkg.scripts.lint, "eslint .");
-    assert.equal(pkg.devDependencies.oxfmt, "^0.31.0");
+    assert.equal(pkg.devDependencies["vite-plus"], "latest");
+    assert.equal(pkg.devDependencies.oxfmt, undefined);
     assert.equal(pkg.devDependencies.prettier, undefined);
     assert.equal(pkg.prettier, undefined);
     assert.equal(pkg.dependencies?.["prettier-plugin-tailwindcss"], undefined);
 
-    const oxfmtConfig = JSON.parse(await readFile(path.join(dir, ".oxfmtrc.json"), "utf8"));
-    assert.deepEqual(oxfmtConfig, {
-      $schema: "./node_modules/oxfmt/configuration_schema.json",
-      useTabs: false,
-      indentWidth: 2,
-      lineWidth: 100,
-      trailingComma: "all",
-      semi: true,
-      singleQuote: false,
-      arrowParens: "always",
-    });
+    const config = await readFile(path.join(dir, "vite.config.ts"), "utf8");
+    assert.match(config, /from "vite-plus"/);
+    assert.match(config, /fmt: \{/);
+    assert.match(config, /lineWidth: 100/);
+    assert.match(config, /trailingComma: "all"/);
     await assert.rejects(stat(path.join(dir, ".prettierrc")));
     await assert.rejects(stat(path.join(dir, ".prettierrc.toml")));
+    await assert.rejects(stat(path.join(dir, ".oxfmtrc.json")));
     await assert.rejects(stat(path.join(dir, "prettier.config.cjs")));
     await assert.rejects(stat(path.join(dir, "prettier.config.ts")));
   });
@@ -119,7 +116,7 @@ void test("oxfmt command exits when package.json is missing", async () => {
   });
 });
 
-void test("oxfmt --init only writes .oxfmtrc.json", async () => {
+void test("oxfmt --init only writes Vite+ format config", async () => {
   await withTempDir(async (dir) => {
     const initialPackageJson =
       JSON.stringify(
@@ -152,16 +149,10 @@ void test("oxfmt --init only writes .oxfmtrc.json", async () => {
     assert.equal(await readFile(path.join(dir, "package.json"), "utf8"), initialPackageJson);
     assert.equal(await readFile(path.join(dir, ".prettierrc"), "utf8"), "{}\n");
 
-    const oxfmtConfig = JSON.parse(await readFile(path.join(dir, ".oxfmtrc.json"), "utf8"));
-    assert.deepEqual(oxfmtConfig, {
-      $schema: "./node_modules/oxfmt/configuration_schema.json",
-      useTabs: false,
-      indentWidth: 2,
-      lineWidth: 100,
-      trailingComma: "all",
-      semi: true,
-      singleQuote: false,
-      arrowParens: "always",
-    });
+    const config = await readFile(path.join(dir, "vite.config.ts"), "utf8");
+    assert.match(config, /from "vite-plus"/);
+    assert.match(config, /fmt: \{/);
+    assert.match(config, /lineWidth: 100/);
+    await assert.rejects(stat(path.join(dir, ".oxfmtrc.json")));
   });
 });
