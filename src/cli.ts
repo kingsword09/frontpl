@@ -29,12 +29,12 @@ async function main() {
     .action(async (options, args) => {
       await runAdd({ nameArg: args[0], yes: options.yes === true });
     })
-    .command("oxlint", "Add/migrate linter to oxlint in current project")
+    .command("oxlint", "Add/migrate Vite+ lint in current project")
     .option("--yes, -y", "Skip confirmations and use defaults")
     .action(async (options) => {
       await runOxlint({ yes: options.yes === true });
     })
-    .command("oxfmt", "Add/migrate formatter to oxfmt in current project")
+    .command("oxfmt", "Add/migrate Vite+ format in current project")
     .option("--yes, -y", "Skip confirmations and use defaults")
     .action(async (options) => {
       await runOxfmt({ yes: options.yes === true });

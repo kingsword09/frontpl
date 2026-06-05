@@ -8,7 +8,8 @@ export { runPackage } from "./commands/package.ts";
 export {
   githubCliCiWorkflowTemplate,
   githubDependabotTemplate,
-  oxlintConfigTemplate,
+  mergeVitePlusConfigTemplate,
   packageJsonTemplate,
+  vitePlusConfigTemplate,
   workspaceRootPackageJsonTemplate,
 } from "./lib/templates.ts";

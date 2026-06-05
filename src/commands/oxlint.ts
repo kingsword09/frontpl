@@ -1,5 +1,5 @@
 import { cancel, confirm, intro, isCancel, outro, select, spinner } from "@clack/prompts";
-import { unlink } from "node:fs/promises";
+import { readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
@@ -12,10 +12,10 @@ import {
   readPackageJson,
   writePackageJson,
 } from "../lib/project.ts";
-import { oxlintConfigTemplate } from "../lib/templates.ts";
+import { mergeVitePlusConfigTemplate, vitePlusConfigTemplate } from "../lib/templates.ts";
 import { pathExists } from "../lib/utils.ts";
 
-const OXLINT_COMMAND = "oxlint --type-aware --type-check";
+const OXLINT_COMMAND = "vp lint";
 const OXLINT_FIX_COMMAND = `${OXLINT_COMMAND} --fix`;
 
 const OXLINT_SCRIPTS = {
@@ -42,7 +42,21 @@ const ESLINT_CONFIG_FILES = [
   "eslint.config.mts",
 ] as const;
 
-const OXLINT_DEPENDENCIES = ["oxlint", "oxlint-tsgolint", "@kingsword/lint-config"] as const;
+const OXLINT_CONFIG_FILES = [
+  ".oxlintrc",
+  ".oxlintrc.json",
+  ".oxlintrc.yaml",
+  ".oxlintrc.yml",
+  "oxlint.config.js",
+  "oxlint.config.cjs",
+  "oxlint.config.mjs",
+  "oxlint.config.ts",
+  "oxlint.config.cts",
+  "oxlint.config.mts",
+] as const;
+
+const OXLINT_DEPENDENCIES = ["vite-plus", "oxlint", "@kingsword/lint-config"] as const;
+const OXLINT_LEGACY_DEPENDENCIES = ["oxlint-tsgolint"] as const;
 
 type CommandOptions = {
   yes?: boolean;
@@ -50,7 +64,7 @@ type CommandOptions = {
 };
 
 type OxlintMode = "init" | "migrate" | "replace";
-type OxlintConfigAction = "written" | "kept-existing";
+type OxlintConfigAction = "written" | "updated" | "kept-existing";
 
 type MigrationStats = {
   strategy: Exclude<OxlintMode, "init">;
@@ -70,7 +84,7 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
 
     const rootDir = process.cwd();
     const packageJsonPath = path.join(rootDir, "package.json");
-    const oxlintConfigPath = path.join(rootDir, "oxlint.config.ts");
+    const viteConfigPath = path.join(rootDir, "vite.config.ts");
 
     const pkg = await readPackageJson(packageJsonPath);
     if (!pkg) {
@@ -85,14 +99,14 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
     if (mode === "init") {
       const oxlintConfigAction = await applyOxlintConfig({
         pkg,
-        oxlintConfigPath,
+        viteConfigPath,
         yes,
       });
 
       outro(
         [
-          "Done. Initialized oxlint config.",
-          `- ${oxlintConfigAction === "written" ? "wrote oxlint.config.ts" : "kept existing oxlint.config.ts"}`,
+          "Done. Initialized Vite+ lint config.",
+          `- ${formatViteConfigAction(oxlintConfigAction)}`,
           "- package.json and dependencies left unchanged",
         ].join("\n"),
       );
@@ -102,7 +116,7 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
     const stats = await migrateToOxlint({
       pkg,
       rootDir,
-      oxlintConfigPath,
+      viteConfigPath,
       strategy: mode,
       yes,
     });
@@ -125,7 +139,7 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
     const dependencySummary =
       stats.addedDevDependencies.length > 0
         ? `added devDependencies: ${stats.addedDevDependencies.join(", ")}`
-        : "required oxlint devDependencies already present";
+        : "required Vite+ lint devDependencies already present";
 
     const typecheckSummary = stats.removedTypecheckScript
       ? "removed redundant typecheck script (tsc --noEmit)"
@@ -133,8 +147,8 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
 
     const eslintDependencySummary =
       stats.removedDependencies.length > 0
-        ? `removed eslint deps: ${stats.removedDependencies.join(", ")}`
-        : "no eslint deps removed";
+        ? `removed lint deps: ${stats.removedDependencies.join(", ")}`
+        : "no lint deps removed";
 
     const eslintConfigSummary = stats.removedPackageJsonEslintConfig
       ? "removed package.json#eslintConfig"
@@ -145,10 +159,7 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
         ? `removed eslint config files: ${stats.removedConfigFiles.join(", ")}`
         : "no eslint config files removed";
 
-    const oxlintConfigSummary =
-      stats.oxlintConfigAction === "written"
-        ? "wrote oxlint.config.ts"
-        : "kept existing oxlint.config.ts";
+    const oxlintConfigSummary = formatViteConfigAction(stats.oxlintConfigAction);
 
     const installSummary =
       packageManager === "deno"
@@ -161,7 +172,7 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
 
     outro(
       [
-        "Done. Applied oxlint migration.",
+        "Done. Applied Vite+ lint migration.",
         `- strategy: ${stats.strategy === "migrate" ? "migrate (keep ESLint assets)" : "replace ESLint assets"}`,
         `- ${scriptSummary}`,
         `- ${typecheckSummary}`,
@@ -182,11 +193,11 @@ export async function runOxlint({ yes = false, init = false }: CommandOptions = 
 async function migrateToOxlint(opts: {
   pkg: PackageJson;
   rootDir: string;
-  oxlintConfigPath: string;
+  viteConfigPath: string;
   strategy: Exclude<OxlintMode, "init">;
   yes: boolean;
 }): Promise<MigrationStats> {
-  const { pkg, rootDir, oxlintConfigPath, strategy, yes } = opts;
+  const { pkg, rootDir, viteConfigPath, strategy, yes } = opts;
 
   const scripts = { ...pkg.scripts };
   const conflictingScripts = Object.entries(OXLINT_SCRIPTS)
@@ -199,7 +210,7 @@ async function migrateToOxlint(opts: {
       : yes
         ? true
         : await askConfirm({
-            message: `Overwrite conflicting scripts (${conflictingScripts.join(", ")}) with oxlint?`,
+            message: `Overwrite conflicting scripts (${conflictingScripts.join(", ")}) with Vite+ lint?`,
             initialValue: true,
           });
 
@@ -234,32 +245,39 @@ async function migrateToOxlint(opts: {
 
   const devDependencies = { ...pkg.devDependencies };
   const addedDevDependencies: string[] = [];
+  const removedLegacyDependencies: string[] = [];
   for (const dependency of OXLINT_DEPENDENCIES) {
     if (devDependencies[dependency]) continue;
     devDependencies[dependency] = "latest";
     addedDevDependencies.push(dependency);
   }
+  for (const dependency of OXLINT_LEGACY_DEPENDENCIES) {
+    if (!devDependencies[dependency]) continue;
+    delete devDependencies[dependency];
+    removedLegacyDependencies.push(dependency);
+  }
   pkg.devDependencies = devDependencies;
 
   const oxlintConfigAction = await applyOxlintConfig({
     pkg,
-    oxlintConfigPath,
+    viteConfigPath,
     yes,
   });
 
-  let removedDependencies: string[] = [];
+  let removedDependencies: string[] = removedLegacyDependencies;
   let removedPackageJsonEslintConfig = false;
   const removedConfigFiles: string[] = [];
 
   if (strategy === "replace") {
     removedDependencies = [
+      ...removedDependencies,
       ...removeEslintDependencies(pkg, "dependencies"),
       ...removeEslintDependencies(pkg, "devDependencies"),
     ];
     removedPackageJsonEslintConfig = removeEslintConfigFromPackageJson(pkg);
     cleanupEmptyDependencyBuckets(pkg);
 
-    for (const file of ESLINT_CONFIG_FILES) {
+    for (const file of [...ESLINT_CONFIG_FILES, ...OXLINT_CONFIG_FILES]) {
       const filePath = path.join(rootDir, file);
       if (!(await pathExists(filePath))) continue;
       await unlink(filePath);
@@ -314,17 +332,17 @@ async function askConfirm(opts: { message: string; initialValue: boolean }) {
 
 async function askOxlintMode(opts: { rootDir: string; pkg: PackageJson }): Promise<OxlintMode> {
   const hasEslintAssets = await detectEslintAssets(opts.rootDir, opts.pkg);
-  const hasOxlintConfig = await pathExists(path.join(opts.rootDir, "oxlint.config.ts"));
+  const hasViteConfig = await pathExists(path.join(opts.rootDir, "vite.config.ts"));
   const mode = await select<OxlintMode>({
-    message: "oxlint mode",
+    message: "Vite+ lint mode",
     initialValue:
-      !hasOxlintConfig && detectExistingOxlintSetup(opts.pkg)
+      !hasViteConfig && detectExistingOxlintSetup(opts.pkg)
         ? "init"
         : hasEslintAssets
           ? "migrate"
           : "replace",
     options: [
-      { value: "init", label: "Initialize oxlint.config.ts only" },
+      { value: "init", label: "Initialize vite.config.ts lint block only" },
       { value: "migrate", label: "Migrate gradually (keep ESLint assets)" },
       { value: "replace", label: "Replace ESLint directly (current mode)" },
     ],
@@ -353,23 +371,52 @@ async function detectEslintAssets(rootDir: string, pkg: PackageJson): Promise<bo
 
 async function applyOxlintConfig(opts: {
   pkg: PackageJson;
-  oxlintConfigPath: string;
+  viteConfigPath: string;
   yes: boolean;
 }): Promise<OxlintConfigAction> {
-  const { pkg, oxlintConfigPath, yes } = opts;
+  const { pkg, viteConfigPath, yes } = opts;
 
   const shouldOverwriteConfig =
-    !(await pathExists(oxlintConfigPath)) ||
+    !(await pathExists(viteConfigPath)) ||
     yes ||
     (await askConfirm({
-      message: "Overwrite existing oxlint.config.ts?",
+      message: "Update existing vite.config.ts with Vite+ lint config?",
       initialValue: true,
     }));
   if (!shouldOverwriteConfig) return "kept-existing";
 
   const useVitest = detectUseVitest(pkg.scripts);
-  await writeText(oxlintConfigPath, oxlintConfigTemplate({ useVitest }));
-  return "written";
+  if (!(await pathExists(viteConfigPath))) {
+    await writeText(
+      viteConfigPath,
+      vitePlusConfigTemplate({
+        useOxlint: true,
+        useOxfmt: false,
+        useVitest,
+        useTsdown: false,
+      }),
+    );
+    return "written";
+  }
+
+  const current = await readFile(viteConfigPath, "utf8");
+  const next = mergeVitePlusConfigTemplate(current, {
+    useOxlint: true,
+    useOxfmt: false,
+    useVitest,
+    useTsdown: false,
+  });
+  if (next === current) return "kept-existing";
+  await writeText(viteConfigPath, next);
+  return "updated";
+}
+
+function formatViteConfigAction(action: OxlintConfigAction) {
+  return action === "written"
+    ? "wrote vite.config.ts"
+    : action === "updated"
+      ? "updated vite.config.ts"
+      : "kept existing vite.config.ts";
 }
 
 function detectUseVitest(scripts: Record<string, string> | undefined) {
@@ -381,6 +428,8 @@ function detectExistingOxlintSetup(pkg: PackageJson) {
     pkg.scripts?.lint === OXLINT_COMMAND ||
     pkg.scripts?.["lint:fix"] === OXLINT_FIX_COMMAND ||
     Boolean(
+      pkg.dependencies?.["vite-plus"] ||
+      pkg.devDependencies?.["vite-plus"] ||
       pkg.dependencies?.oxlint ||
       pkg.devDependencies?.oxlint ||
       pkg.devDependencies?.["oxlint-tsgolint"] ||

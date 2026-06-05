@@ -36,14 +36,14 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
+    "build": "vp pack",
+    "dev": "vp pack --watch",
     "start": "node dist/cli.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "oxlint --type-aware --type-check",
-    "lint:fix": "oxlint --type-aware --type-check --fix",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
+    "typecheck": "vp check --no-fmt --no-lint",
+    "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
+    "format": "vp fmt",
+    "format:check": "vp fmt --check",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -53,14 +53,12 @@
   "devDependencies": {
     "@kingsword/lint-config": "^0.2.1",
     "@types/node": "^25.0.10",
-    "oxfmt": "^0.36.0",
-    "oxlint": "^1.46.0",
-    "oxlint-tsgolint": "^0.16.0",
-    "tsdown": "^0.21.1",
-    "typescript": "^5.9.3"
+    "oxlint": "^1.67.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.1.24"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "packageManager": "pnpm@10.28.1"
 }

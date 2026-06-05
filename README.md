@@ -2,7 +2,7 @@
 
 Interactive CLI to scaffold standardized frontend project templates (with optional CI/Release workflows).
 
-> Node.js >= 22
+> Node.js >= 22.12
 
 ## Install
 
@@ -28,10 +28,11 @@ Follow the prompts to choose:
 
 - Package manager (`npm`/`pnpm`/`yarn`/`bun`/`deno`)
 - Optional `pnpm workspace` mode (monorepo skeleton)
-- Optional tooling: `oxlint`, `oxfmt`, `vitest`, `tsdown`
+- Optional Vite+ tooling: lint, format, test, pack build
 
-When `oxlint` is enabled, generated projects use `@kingsword/lint-config` via `oxlint.config.ts`.
-Generated lint-related dependencies (`oxlint`, `oxlint-tsgolint`, `oxfmt`, `@kingsword/lint-config`) default to `latest` in scaffolded `package.json`.
+Generated projects consolidate Vite+ tool configuration into `vite.config.ts`.
+When Vite+ lint is enabled, generated projects use `@kingsword/lint-config` from that file.
+Generated Vite+-related dependencies (`vite-plus`, plus `oxlint` and `@kingsword/lint-config` when lint is enabled) default to `latest` in scaffolded `package.json`.
 
 - Git init
 - GitHub Actions workflows:
@@ -52,16 +53,16 @@ Generated output includes (based on options):
 - `tsconfig.json`, `src/index.ts`
 - Generated `tsconfig.json` enables `allowImportingTsExtensions` for `.ts` import paths
 - Relative TypeScript imports use explicit `.ts` extensions (e.g. generated `src/index.test.ts`)
-- Optional configs: `oxlint.config.ts`, `.oxfmtrc.json`, `tsdown.config.ts`
+- Optional `vite.config.ts` with Vite+ `lint`, `fmt`, `test`, and `pack` blocks
 - Optional GitHub Actions workflows in `.github/workflows/`
 
 When `pnpm workspace mode` is enabled:
 
 - Root contains `pnpm-workspace.yaml` and the workspace `package.json`
 - Workspace root `package.json` includes `"type": "module"`
-- `oxlint`/`oxfmt` scripts, dependencies, and config files are generated at the workspace root
-- App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, and `tsconfig.json`
-- If root `oxlint` is enabled, package `package.json` does not add redundant `typecheck: tsc --noEmit`
+- Vite+ lint/format scripts, dependencies, and root `vite.config.ts` are generated at the workspace root
+- App/library package is scaffolded under `packages/<name>/` with its own `package.json`, `src`, `tsconfig.json`, and optional `vite.config.ts` for test/pack settings
+- If root Vite+ lint is enabled, package `package.json` does not add redundant `typecheck: tsc --noEmit`
 
 ### `frontpl add [name]`
 
@@ -75,10 +76,10 @@ What it does:
   - `packages/<name>/README.md`
   - `packages/<name>/src/index.ts`
   - `packages/<name>/tsconfig.json`
-- Optionally adds `vitest` (`src/index.test.ts`) and `tsdown` (`tsdown.config.ts`)
+- Optionally adds Vite+ test (`src/index.test.ts`) and pack build (`vite.config.ts`)
 - Reuses root toolchain strategy:
-  - package does not scaffold `oxlint`/`oxfmt` scripts
-  - if root `oxlint` exists, package does not scaffold `typecheck: tsc --noEmit`
+  - package does not scaffold root-managed lint/format scripts
+  - if root `lint` script uses `vp lint`, package does not scaffold redundant `typecheck: tsc --noEmit`
 
 Use `--yes` (or `-y`) to skip confirmations and use defaults inferred from root scripts.
 
@@ -103,7 +104,7 @@ What it does:
   - `type: "module"`, `files: ["dist"]`
   - `main`, `types`, and `exports` pointing to `dist/index`
   - `publishConfig.access: "public"`
-  - `engines.node: ">=22.0.0"`
+  - `engines.node: ">=22.12.0"`
   - `scripts.prepublishOnly` from existing `scripts.build`
 
 Use `--yes` (or `-y`) to skip confirmation.
@@ -143,57 +144,58 @@ What it does:
 
 ### `frontpl oxlint`
 
-Add/migrate linting in the current project to `oxlint`.
+Add/migrate linting in the current project to Vite+ lint.
 
 What it does:
 
 - Asks mode interactively:
-  - Initialize `oxlint.config.ts` only
+  - Initialize `vite.config.ts` lint block only
   - Migrate gradually (keep existing ESLint assets)
   - Replace ESLint directly (current mode)
 - Ensures `package.json` scripts use:
-  - `lint`: `oxlint --type-aware --type-check`
-  - `lint:fix`: `oxlint --type-aware --type-check --fix`
+  - `lint`: `vp lint`
+  - `lint:fix`: `vp lint --fix`
 - Removes `typecheck: tsc --noEmit` when confirmed (or by default with `--yes`)
 - Ensures devDependencies exist:
+  - `vite-plus`
   - `oxlint`
-  - `oxlint-tsgolint`
   - `@kingsword/lint-config`
-- Creates or updates `oxlint.config.ts` using `@kingsword/lint-config`
-- In replace mode, removes ESLint deps/configs (`eslint*`, `@eslint/*`, `@typescript-eslint/*`, `eslintConfig`, `.eslintrc*`, `eslint.config.*`)
+- Creates or updates `vite.config.ts` using the `@kingsword/lint-config` Vite+ lint block
+- Removes the legacy `oxlint-tsgolint` dependency when migrating
+- In replace mode, removes ESLint deps/configs and legacy Oxlint configs (`eslint*`, `@eslint/*`, `@typescript-eslint/*`, `eslintConfig`, `.eslintrc*`, `eslint.config.*`, `.oxlintrc*`, `oxlint.config.*`)
 - Optionally installs dependencies with detected package manager
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
 With `--yes`, strategy defaults to `replace`.
-When selecting initialize mode, only `oxlint.config.ts` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
+When selecting initialize mode, only `vite.config.ts` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
 That means existing `lint` scripts are kept as-is in initialize mode; only migrate/replace mode may update them.
 
 ### `frontpl oxfmt`
 
-Add/migrate formatting in the current project to `oxfmt`.
+Add/migrate formatting in the current project to Vite+ format.
 
 What it does:
 
 - Asks mode interactively:
-  - Initialize `.oxfmtrc.json` only
-  - Migrate from Prettier (`oxfmt --migrate=prettier`)
-  - Rebuild `.oxfmtrc.json` (current mode)
+  - Initialize `vite.config.ts` fmt block only
+  - Migrate gradually (keep existing Prettier assets)
+  - Replace Prettier directly (current mode)
 - Ensures `package.json` scripts use:
-  - `format`: `oxfmt`
-  - `format:check`: `oxfmt --check`
-- Ensures `devDependencies.oxfmt` exists (defaults to `latest` when missing)
-- Creates or updates `.oxfmtrc.json`
-- Rebuild mode writes baseline formatter options:
-  - `$schema: "./node_modules/oxfmt/configuration_schema.json"`
+  - `format`: `vp fmt`
+  - `format:check`: `vp fmt --check`
+- Ensures `devDependencies.vite-plus` exists (defaults to `latest` when missing)
+- Creates or updates the Vite+ `fmt` block in `vite.config.ts`
+- The generated `fmt` block uses baseline formatter options:
   - `useTabs: false`, `indentWidth: 2`, `lineWidth: 100`
   - `trailingComma: "all"`, `semi: true`, `singleQuote: false`, `arrowParens: "always"`
-- Optionally removes `prettier` / `prettier-plugin-*` / `@prettier/plugin-*` dependencies, `package.json#prettier`, and Prettier config files (`.prettierrc*`, `prettier.config.*`)
+- Removes direct `oxfmt` dependency when migrating
+- In replace mode, removes `prettier` / `prettier-plugin-*` / `@prettier/plugin-*` dependencies, `package.json#prettier`, Prettier config files (`.prettierrc*`, `prettier.config.*`), and legacy `.oxfmtrc.json`
 - Optionally installs dependencies with detected package manager
 
 Use `--yes` (or `-y`) to skip confirmations and apply default choices.
-With `--yes`, config strategy defaults to rebuild `.oxfmtrc.json`.
-When selecting initialize mode, only `.oxfmtrc.json` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
-That means existing `fmt` / `format` scripts are kept as-is in initialize mode; only migrate/rebuild mode may update standard scripts.
+With `--yes`, strategy defaults to `replace`.
+When selecting initialize mode, only `vite.config.ts` is created/updated; `package.json`, scripts, and dependencies stay unchanged.
+That means existing `fmt` / `format` scripts are kept as-is in initialize mode; only migrate/replace mode may update standard scripts.
 
 ## GitHub Actions (CI + Release)
 
@@ -238,4 +240,4 @@ node dist/cli.mjs oxfmt --help
 
 ## Lint preset
 
-This repository itself uses `@kingsword/lint-config` (see `oxlint.config.ts`).
+This repository itself uses Vite+ with `@kingsword/lint-config` (see `vite.config.ts`).

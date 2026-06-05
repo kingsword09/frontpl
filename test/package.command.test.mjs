@@ -48,7 +48,7 @@ void test("package command exits when remote is not github.com", async () => {
           name: "demo",
           private: true,
           packageManager: "pnpm@10.30.3",
-          scripts: { build: "tsdown" },
+          scripts: { build: "vp pack" },
         },
         null,
         2,
@@ -76,7 +76,7 @@ void test("package command normalizes package.json using github remote", async (
           private: true,
           packageManager: "pnpm@10.30.3",
           scripts: {
-            build: "tsdown",
+            build: "vp pack",
           },
         },
         null,
@@ -109,7 +109,7 @@ void test("package command normalizes package.json using github remote", async (
     assert.equal(pkg.repository.url, "git+https://github.com/acme/demo-lib.git");
     assert.equal(pkg.repository.directory, undefined);
     assert.equal(pkg.publishConfig.access, "public");
-    assert.equal(pkg.engines.node, ">=22.0.0");
+    assert.equal(pkg.engines.node, ">=22.12.0");
     assert.equal(pkg.scripts.prepublishOnly, "pnpm run build");
   });
 });
@@ -125,7 +125,7 @@ void test("package command preserves existing license", async () => {
           license: "Apache-2.0",
           packageManager: "pnpm@10.30.3",
           scripts: {
-            build: "tsdown",
+            build: "vp pack",
           },
         },
         null,
@@ -175,7 +175,7 @@ void test("package command writes repository.directory in monorepo subpackage", 
           name: "web",
           private: true,
           scripts: {
-            build: "tsdown",
+            build: "vp pack",
           },
         },
         null,

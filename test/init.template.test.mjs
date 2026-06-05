@@ -4,20 +4,102 @@ import { readdir, readFile } from "node:fs/promises";
 
 import {
   githubDependabotTemplate,
-  oxlintConfigTemplate,
+  mergeVitePlusConfigTemplate,
   packageJsonTemplate,
   validateProjectName,
+  vitePlusConfigTemplate,
   workspaceRootPackageJsonTemplate,
 } from "../dist/index.mjs";
 import { githubCliCiWorkflowTemplate } from "../dist/index.mjs";
 
-void test("oxlint template uses @kingsword/lint-config", () => {
-  const cfg = oxlintConfigTemplate({ useVitest: false });
-  assert.match(cfg, /import \{ defineConfig \} from "oxlint";/);
+void test("vite plus template consolidates lint format test and pack config", () => {
+  const cfg = vitePlusConfigTemplate({
+    useOxlint: true,
+    useOxfmt: true,
+    useVitest: true,
+    useTsdown: true,
+  });
+
+  assert.match(cfg, /import \{ defineConfig \} from "vite-plus";/);
   assert.match(cfg, /import \{ oxlint \} from "@kingsword\/lint-config\/config";/);
-  assert.match(cfg, /profile: "lib"/);
-  assert.match(cfg, /test: "none"/);
-  assert.match(cfg, /level: "recommended"/);
+  assert.match(cfg, /lint: oxlint\(/);
+  assert.match(cfg, /test: "vitest"/);
+  assert.match(cfg, /fmt: \{/);
+  assert.match(cfg, /test: \{/);
+  assert.match(cfg, /pack: \{/);
+});
+
+void test("vite plus merge updates existing vite config with tool blocks", () => {
+  const cfg = mergeVitePlusConfigTemplate(
+    [
+      'import { defineConfig } from "vite";',
+      "",
+      "export default defineConfig({",
+      "  test: {",
+      '    include: ["test/**/*.test.ts"],',
+      "  },",
+      "});",
+      "",
+    ].join("\n"),
+    {
+      useOxlint: true,
+      useOxfmt: true,
+      useVitest: true,
+      useTsdown: true,
+    },
+  );
+
+  assert.match(cfg, /import \{ defineConfig \} from "vite-plus";/);
+  assert.match(cfg, /import \{ oxlint \} from "@kingsword\/lint-config\/config";/);
+  assert.match(cfg, /lint: oxlint\(/);
+  assert.match(cfg, /fmt: \{/);
+  assert.match(cfg, /pack: \{/);
+  assert.match(cfg, /include: \["test\/\*\*\/\*.test.ts"\]/);
+});
+
+void test("vite plus merge preserves function-style vite config", () => {
+  const cfg = mergeVitePlusConfigTemplate(
+    [
+      'import { defineConfig } from "vite";',
+      "",
+      "export default defineConfig(({ mode }) => ({",
+      "  plugins: [],",
+      "}));",
+      "",
+    ].join("\n"),
+    {
+      useOxlint: false,
+      useOxfmt: true,
+      useVitest: false,
+      useTsdown: false,
+    },
+  );
+
+  assert.match(cfg, /import \{ defineConfig \} from "vite-plus";/);
+  assert.match(cfg, /fmt: \{/);
+  assert.match(cfg, /plugins: \[\]/);
+  assert.match(cfg, /mode/);
+});
+
+void test("vite plus merge does not mutate function-style config blocks", () => {
+  const source = [
+    'import { defineConfig } from "vite";',
+    "",
+    "export default defineConfig((env) => {",
+    "  return {",
+    "    plugins: [],",
+    "  };",
+    "});",
+    "",
+  ].join("\n");
+  const cfg = mergeVitePlusConfigTemplate(source, {
+    useOxlint: false,
+    useOxfmt: true,
+    useVitest: false,
+    useTsdown: false,
+  });
+
+  assert.equal(cfg, source);
 });
 
 void test("package template adds kingsword lint dependency", () => {
@@ -30,6 +112,7 @@ void test("package template adds kingsword lint dependency", () => {
     oxlintTsgolintVersion: "latest",
     kingswordLintConfigVersion: "latest",
     useOxfmt: false,
+    vitePlusVersion: "latest",
     useVitest: true,
     vitestVersion: "latest",
     useTsdown: false,
@@ -38,11 +121,12 @@ void test("package template adds kingsword lint dependency", () => {
   const pkg = JSON.parse(pkgText);
 
   assert.equal(pkg.scripts.typecheck, undefined);
-  assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
-  assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
+  assert.equal(pkg.scripts.lint, "vp lint");
+  assert.equal(pkg.scripts["lint:fix"], "vp lint --fix");
+  assert.equal(pkg.devDependencies["vite-plus"], "latest");
   assert.equal(pkg.devDependencies.oxlint, "latest");
   assert.equal(pkg.devDependencies["@kingsword/lint-config"], "latest");
-  assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
+  assert.equal(pkg.devDependencies["oxlint-tsgolint"], undefined);
 });
 
 void test("package template falls back to tsc typecheck when oxlint is disabled", () => {
@@ -83,6 +167,7 @@ void test("package template preserves camel case project names", () => {
     kingswordLintConfigVersion: "latest",
     useOxfmt: true,
     oxfmtVersion: "latest",
+    vitePlusVersion: "latest",
     useVitest: false,
     useTsdown: true,
     tsdownVersion: "latest",
@@ -102,6 +187,7 @@ void test("workspace root package template hosts lint/format toolchain", () => {
     kingswordLintConfigVersion: "latest",
     useOxfmt: true,
     oxfmtVersion: "latest",
+    vitePlusVersion: "latest",
     useVitest: true,
     useTsdown: true,
   });
@@ -110,18 +196,19 @@ void test("workspace root package template hosts lint/format toolchain", () => {
 
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, "module");
-  assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
-  assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
-  assert.equal(pkg.scripts.format, "oxfmt");
-  assert.equal(pkg.scripts["format:check"], "oxfmt --check");
+  assert.equal(pkg.scripts.lint, "vp lint");
+  assert.equal(pkg.scripts["lint:fix"], "vp lint --fix");
+  assert.equal(pkg.scripts.format, "vp fmt");
+  assert.equal(pkg.scripts["format:check"], "vp fmt --check");
   assert.equal(pkg.scripts.fmt, undefined);
   assert.equal(pkg.scripts["fmt:check"], undefined);
-  assert.equal(pkg.scripts.test, "pnpm -r --if-present run test");
-  assert.equal(pkg.scripts.build, "pnpm -r --if-present run build");
+  assert.equal(pkg.scripts.test, "vp run -r test");
+  assert.equal(pkg.scripts.build, "vp run -r build");
+  assert.equal(pkg.devDependencies["vite-plus"], "latest");
   assert.equal(pkg.devDependencies.oxlint, "latest");
-  assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
+  assert.equal(pkg.devDependencies["oxlint-tsgolint"], undefined);
   assert.equal(pkg.devDependencies["@kingsword/lint-config"], "latest");
-  assert.equal(pkg.devDependencies.oxfmt, "latest");
+  assert.equal(pkg.devDependencies.oxfmt, undefined);
 });
 
 void test("workspace package template omits oxlint/oxfmt when managed at root", () => {
@@ -132,6 +219,7 @@ void test("workspace package template omits oxlint/oxfmt when managed at root", 
     useOxlint: false,
     includeTypecheckWithoutOxlint: false,
     useOxfmt: false,
+    vitePlusVersion: "latest",
     useVitest: true,
     vitestVersion: "latest",
     useTsdown: true,
@@ -144,13 +232,14 @@ void test("workspace package template omits oxlint/oxfmt when managed at root", 
   assert.equal(pkg.scripts.format, undefined);
   assert.equal(pkg.scripts.fmt, undefined);
   assert.equal(pkg.scripts.typecheck, undefined);
-  assert.equal(pkg.scripts.test, "vitest");
-  assert.equal(pkg.scripts.build, "tsdown");
+  assert.equal(pkg.scripts.test, "vp test");
+  assert.equal(pkg.scripts.build, "vp pack");
   assert.equal(pkg.devDependencies.oxlint, undefined);
   assert.equal(pkg.devDependencies.oxfmt, undefined);
   assert.equal(pkg.devDependencies.typescript, "latest");
-  assert.equal(pkg.devDependencies.vitest, "latest");
-  assert.equal(pkg.devDependencies.tsdown, "latest");
+  assert.equal(pkg.devDependencies["vite-plus"], "latest");
+  assert.equal(pkg.devDependencies.vitest, undefined);
+  assert.equal(pkg.devDependencies.tsdown, undefined);
 });
 
 void test("ci template can pin explicit run commands", () => {
@@ -231,6 +320,7 @@ void test("vitest scaffold template uses .ts import extension", async () => {
   );
   const bundleText = moduleTexts.join("\n");
 
+  assert.match(bundleText, /vite-plus\/test/);
   assert.match(bundleText, /\.\/index\.ts/);
   assert.match(bundleText, /allowImportingTsExtensions/);
   assert.doesNotMatch(bundleText, /\.\/index\.js/);

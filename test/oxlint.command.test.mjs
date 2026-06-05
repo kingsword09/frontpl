@@ -40,7 +40,7 @@ function runOxlintInit(cwd) {
   );
 }
 
-void test("oxlint command replaces eslint scripts/assets and writes oxlint config", async () => {
+void test("oxlint command replaces eslint assets and writes Vite+ lint config", async () => {
   await withTempDir(async (dir) => {
     await writeFile(
       path.join(dir, "package.json"),
@@ -64,6 +64,7 @@ void test("oxlint command replaces eslint scripts/assets and writes oxlint confi
           },
           devDependencies: {
             eslint: "^9.20.0",
+            "oxlint-tsgolint": "^0.15.0",
             "@typescript-eslint/eslint-plugin": "^8.20.0",
           },
         },
@@ -74,19 +75,21 @@ void test("oxlint command replaces eslint scripts/assets and writes oxlint confi
 
     await writeFile(path.join(dir, ".eslintrc.json"), "{}\n");
     await writeFile(path.join(dir, "eslint.config.mts"), "export default [];\n");
+    await writeFile(path.join(dir, "oxlint.config.ts"), "export default {};\n");
 
     const result = runCli(dir, ["oxlint", "--yes"]);
     assert.equal(result.status, 0);
 
     const pkg = JSON.parse(await readFile(path.join(dir, "package.json"), "utf8"));
 
-    assert.equal(pkg.scripts.lint, "oxlint --type-aware --type-check");
-    assert.equal(pkg.scripts["lint:fix"], "oxlint --type-aware --type-check --fix");
+    assert.equal(pkg.scripts.lint, "vp lint");
+    assert.equal(pkg.scripts["lint:fix"], "vp lint --fix");
     assert.equal(pkg.scripts.typecheck, undefined);
     assert.equal(pkg.scripts.test, "vitest");
 
+    assert.equal(pkg.devDependencies["vite-plus"], "latest");
     assert.equal(pkg.devDependencies.oxlint, "latest");
-    assert.equal(pkg.devDependencies["oxlint-tsgolint"], "latest");
+    assert.equal(pkg.devDependencies["oxlint-tsgolint"], undefined);
     assert.equal(pkg.devDependencies["@kingsword/lint-config"], "latest");
 
     assert.equal(pkg.devDependencies.eslint, undefined);
@@ -94,12 +97,15 @@ void test("oxlint command replaces eslint scripts/assets and writes oxlint confi
     assert.equal(pkg.dependencies?.["@next/eslint-plugin-next"], undefined);
     assert.equal(pkg.eslintConfig, undefined);
 
-    const config = await readFile(path.join(dir, "oxlint.config.ts"), "utf8");
+    const config = await readFile(path.join(dir, "vite.config.ts"), "utf8");
+    assert.match(config, /from "vite-plus"/);
+    assert.match(config, /lint: oxlint\(/);
     assert.match(config, /@kingsword\/lint-config\/config/);
     assert.match(config, /test: "vitest"/);
 
     await assert.rejects(stat(path.join(dir, ".eslintrc.json")));
     await assert.rejects(stat(path.join(dir, "eslint.config.mts")));
+    await assert.rejects(stat(path.join(dir, "oxlint.config.ts")));
   });
 });
 
@@ -111,7 +117,7 @@ void test("oxlint command exits when package.json is missing", async () => {
   });
 });
 
-void test("oxlint --init only writes oxlint config", async () => {
+void test("oxlint --init only writes Vite+ lint config", async () => {
   await withTempDir(async (dir) => {
     const initialPackageJson =
       JSON.stringify(
@@ -141,8 +147,11 @@ void test("oxlint --init only writes oxlint config", async () => {
 
     assert.equal(await readFile(path.join(dir, "package.json"), "utf8"), initialPackageJson);
 
-    const config = await readFile(path.join(dir, "oxlint.config.ts"), "utf8");
+    const config = await readFile(path.join(dir, "vite.config.ts"), "utf8");
+    assert.match(config, /from "vite-plus"/);
+    assert.match(config, /lint: oxlint\(/);
     assert.match(config, /@kingsword\/lint-config\/config/);
     assert.match(config, /test: "vitest"/);
+    await assert.rejects(stat(path.join(dir, "oxlint.config.ts")));
   });
 });
