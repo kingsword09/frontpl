@@ -52,10 +52,10 @@
   },
   "devDependencies": {
     "@kingsword/lint-config": "^0.2.1",
-    "@types/node": "^25.0.10",
+    "@types/node": "^26.1.1",
     "oxlint": "^1.67.0",
-    "typescript": "^6.0.3",
-    "vite-plus": "^0.1.24"
+    "typescript": "^7.0.2",
+    "vite-plus": "^0.2.4"
   },
   "engines": {
     "node": ">=22.12.0"
